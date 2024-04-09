@@ -1,3 +1,6 @@
+import sqlalchemy
+from src import database as db
+
 from fastapi import APIRouter, Depends
 from pydantic import BaseModel
 from src.api import auth
@@ -22,6 +25,13 @@ def post_deliver_barrels(barrels_delivered: list[Barrel], order_id: int):
     """ """
     print(f"barrels delievered: {barrels_delivered} order_id: {order_id}")
 
+    with db.engine.begin() as connection:
+        mlGained = barrels_delivered[0].ml_per_barrel * barrels_delivered[0].quantity 
+        goldSpent = barrels_delivered[0].price * barrels_delivered[0].quantity
+        connection.execute(sqlalchemy.text("UPDATE global_inventory SET num_green_ml += mlGained"))
+        
+        connection.execute(sqlalchemy.text("UPDATE global_inventory SET gold -= goldSpent"))
+
     return "OK"
 
 # Gets called once a day
@@ -30,10 +40,14 @@ def get_wholesale_purchase_plan(wholesale_catalog: list[Barrel]):
     """ """
     print(wholesale_catalog)
 
-    return [
-        {
-            "sku": "SMALL_RED_BARREL",
-            "quantity": 1,
-        }
-    ]
-
+    with db.engine.begin() as connection:
+        numGreenPot = connection.execute(sqlalchemy.text("SELECT num_green_potions FROM global_inventory"))
+        if(numGreenPot < 10):
+            return [
+                {
+                    "sku": "SMALL_GREEN_BARREL",
+                    "quantity": 1,
+                }
+            ]
+        else:
+            return[]
