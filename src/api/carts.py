@@ -116,14 +116,13 @@ def set_item_quantity(cart_id: int, item_sku: str, cart_item: CartItem):
 
     
     if(cart_id not in cartss.keys()):
-        cartss[cart_id] = {potionId : {}}
-    cartss[cart_id][potionId] = (
-        {
+        cartss[cart_id] = []# {potionId : {}}
+    cartss[cart_id] += {
             "sku": item_sku,
             "potion_id": potionId,
             "quantity": cart_item.quantity
         } 
-    )
+    
 
     return "OK"
 
@@ -136,15 +135,14 @@ def checkout(cart_id: int, cart_checkout: CartCheckout):
     """ """
     totalBought = 0
     totalGoldPaid = 0
-
     
     with db.engine.begin() as connection:
         for item in cartss[cart_id]:
-            for potion in item:
-                totalBought += potion["quantity"]
-                totalGoldPaid += (potion["quantity"] * connection.execute(sqlalchemy.text(f"SELECT price FROM potion_inventory WHERE id = {item["potion_id"]}")).scalar_one())
+            print(item)
+            totalBought += item["quantity"]
+            totalGoldPaid += (item["quantity"] * connection.execute(sqlalchemy.text(f"SELECT price FROM potion_inventory WHERE id = {item["potion_id"]}")).scalar_one())
 
-                connection.execute(sqlalchemy.text(f"UPDATE potion_inventory SET quantity = quantity - {potion["quantity"]} WHERE id = {potion["potion_id"]}")).scalar_one()
+            connection.execute(sqlalchemy.text(f"UPDATE potion_inventory SET quantity = quantity - {item["quantity"]} WHERE id = {item["potion_id"]}")).scalar_one()
         
         connection.execute(sqlalchemy.text(f"UPDATE global_inventory SET gold = gold + {totalGoldPaid}"))
 
