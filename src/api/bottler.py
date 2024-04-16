@@ -22,25 +22,36 @@ def post_deliver_bottles(potions_delivered: list[PotionInventory], order_id: int
     print(f"potions delievered: {potions_delivered} order_id: {order_id}")
 
     # Zero everything first
-    redMlUsed = 0
-    greenMlUsed = 0
-    blueMlUsed = 0
-    darkMlUsed = 0
+    mlUsed = [0, 0, 0, 0]
+    potions = [0, 0, 0]
 
     for pot in potions_delivered:
-        redMlUsed += pot.potion_type[0] * pot.quantity
-        greenMlUsed += pot.potion_type[1] * pot.quantity
-        blueMlUsed += pot.potion_type[2] * pot.quantity
-        darkMlUsed += pot.potion_type[3] * pot.quantity
+        mlUsed[0] += pot.potion_type[0] * pot.quantity
+        mlUsed[1] += pot.potion_type[1] * pot.quantity
+        mlUsed[2] += pot.potion_type[2] * pot.quantity
+        mlUsed[3] += pot.potion_type[3] * pot.quantity
+
+        if pot.potion_type[0] == 100:
+            potions[0] += pot.quantity
+        elif pot.potion_type[1] == 100:
+            potions[1] += pot.quantity
+        elif pot.potion_type[2] == 100:
+            potions[2] += pot.quantity
     
 
 
     with db.engine.begin() as connection:
         greenPotGained = potions_delivered[0].quantity
-        mlUsed = 100 * greenPotGained
 
-        connection.execute(sqlalchemy.text(f"UPDATE global_inventory SET num_green_ml = num_green_ml - {mlUsed}"))
-        connection.execute(sqlalchemy.text(f"UPDATE global_inventory SET num_green_potions = num_green_potions + {greenPotGained}"))
+        connection.execute(sqlalchemy.text(f"UPDATE global_inventory SET num_red_ml = num_red_ml - {mlUsed[0]}"))
+        connection.execute(sqlalchemy.text(f"UPDATE global_inventory SET num_green_ml = num_green_ml - {mlUsed[1]}"))
+        connection.execute(sqlalchemy.text(f"UPDATE global_inventory SET num_blue_ml = num_blue_ml - {mlUsed[2]}"))
+        connection.execute(sqlalchemy.text(f"UPDATE global_inventory SET num_dark_ml = num_dark_ml - {mlUsed[3]}"))
+
+        connection.execute(sqlalchemy.text(f"UPDATE potion_inventory SET quantity = quantity + {potions[0]} WHERE id = 2"))
+        connection.execute(sqlalchemy.text(f"UPDATE potion_inventory SET quantity = quantity + {potions[1]} WHERE id = 1"))
+        connection.execute(sqlalchemy.text(f"UPDATE potion_inventory SET quantity = quantity + {potions[2]} WHERE id = 3"))
+        # connection.execute(sqlalchemy.text(f"UPDATE potion_inventory SET quantity = quantity + {potions[0] + potions[1] + potions[2]} WHERE id = 'total'"))
 
     return "OK"
 
@@ -56,17 +67,39 @@ def get_bottle_plan():
 
     # Initial logic: bottle all barrels into red potions.
     with db.engine.begin() as connection:
-        numGreenMl = connection.execute(sqlalchemy.text("SELECT num_green_ml FROM global_inventory")).scalar_one()
-        if(numGreenMl >= 100):
-            numPotToMake = numGreenMl / 100
-            return [
+        numMl = [0, 0, 0]
+        numMl[0] = connection.execute(sqlalchemy.text("SELECT num_red_ml FROM global_inventory")).scalar_one()
+        numMl[1] = connection.execute(sqlalchemy.text("SELECT num_green_ml FROM global_inventory")).scalar_one()
+        numMl[2] = connection.execute(sqlalchemy.text("SELECT num_blue_ml FROM global_inventory")).scalar_one()
+        list = []
+        
+        if(numMl[0] >= 100):
+            numPotToMake = numMl[0] / 100
+            list.append(
+                    {
+                        "potion_type": [100, 0, 0, 0],
+                        "quantity": numPotToMake,
+                    }
+            )
+        if(numMl[1] >= 100):
+            numPotToMake = numMl[1] / 100
+            list.append(
                     {
                         "potion_type": [0, 100, 0, 0],
                         "quantity": numPotToMake,
                     }
-                ]
-        else:
-            return []
+            )
+        if(numMl[2] >= 100):
+            numPotToMake = numMl[2] / 100
+            list.append(
+                    {
+                        "potion_type": [0, 0, 100, 0],
+                        "quantity": numPotToMake,
+                    }
+            )
+        
+        
+        return list
 
 if __name__ == "__main__":
     print(get_bottle_plan())

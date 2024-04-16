@@ -6,6 +6,9 @@ from pydantic import BaseModel
 from src.api import auth
 from enum import Enum
 
+id = 0
+cartss = {}
+
 router = APIRouter(
     prefix="/carts",
     tags=["cart"],
@@ -88,16 +91,39 @@ def post_visits(visit_id: int, customers: list[Customer]):
 @router.post("/")
 def create_cart(new_cart: Customer):
     """ """
-    return {"cart_id": 1}
+    global id
+    id += 1
+    # thisId = id
+    return {"cart_id": id}
 
 
 class CartItem(BaseModel):
     quantity: int
 
+# class Cart(BaseModel):
+#     sku: str
+#     potion_id: int
+#     quantity: int
+
 
 @router.post("/{cart_id}/items/{item_sku}")
 def set_item_quantity(cart_id: int, item_sku: str, cart_item: CartItem):
     """ """
+    global cartss
+
+    with db.engine.begin() as connection:
+        potionId = connection.execute(sqlalchemy.text(f"SELECT id FROM potion_inventory WHERE name = '{item_sku}'")).scalar_one()
+
+    
+    if(cart_id not in cartss.keys()):
+        cartss[cart_id] = {potionId : {}}
+    cartss[cart_id][potionId] = (
+        {
+            "sku": item_sku,
+            "potion_id": potionId,
+            "quantity": cart_item.quantity
+        } 
+    )
 
     return "OK"
 
@@ -108,8 +134,18 @@ class CartCheckout(BaseModel):
 @router.post("/{cart_id}/checkout")
 def checkout(cart_id: int, cart_checkout: CartCheckout):
     """ """
-    with db.engine.begin() as connection:
+    totalBought = 0
+    totalGoldPaid = 0
 
-        connection.execute(sqlalchemy.text("UPDATE global_inventory SET num_green_potions = num_green_potions - 1"))
-        connection.execute(sqlalchemy.text("UPDATE global_inventory SET gold = gold + 50"))
-    return {"total_potions_bought": 1, "total_gold_paid": 50}
+    
+    with db.engine.begin() as connection:
+        for item in cartss[cart_id]:
+            for potion in item:
+                totalBought += potion["quantity"]
+                totalGoldPaid += (potion["quantity"] * connection.execute(sqlalchemy.text(f"SELECT price FROM potion_inventory WHERE id = {item["potion_id"]}")).scalar_one())
+
+                connection.execute(sqlalchemy.text(f"UPDATE potion_inventory SET quantity = quantity - {potion["quantity"]} WHERE id = {potion["potion_id"]}")).scalar_one()
+        
+        connection.execute(sqlalchemy.text(f"UPDATE global_inventory SET gold = gold + {totalGoldPaid}"))
+
+    return {"total_potions_bought": totalBought, "total_gold_paid": totalGoldPaid}
