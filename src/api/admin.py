@@ -28,5 +28,8 @@ def reset():
 
         connection.execute(sqlalchemy.text("UPDATE potion_inventory SET quantity = 0"))
 
+        connection.execute(sqlalchemy.text("DELETE FROM carts"))
+        connection.execute(sqlalchemy.text("DELETE FROM cart_items"))
+
     return "OK"
 
