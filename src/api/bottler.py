@@ -80,15 +80,15 @@ def get_bottle_plan():
         )
 
         if(numMl[0] >= 100 and totalCurrPot < 50):
-            numPotToMake = min(numMl[0] / 100, 50 - totalCurrPot)
-            list.append(
+            numPotToMake = int( min(numMl[0] / 100, 50 - totalCurrPot) )
+            list.append( 
                     {
                         "potion_type": [100, 0, 0, 0],
                         "quantity": numPotToMake,
                     }
             )
         if(numMl[1] >= 100):
-            numPotToMake = min(numMl[1] / 100, 50 - totalCurrPot)
+            numPotToMake = int( min(numMl[1] / 100, 50 - totalCurrPot) )
             list.append(
                     {
                         "potion_type": [0, 100, 0, 0],
@@ -96,7 +96,7 @@ def get_bottle_plan():
                     }
             )
         if(numMl[2] >= 100):
-            numPotToMake = min(numMl[2] / 100, 50 - totalCurrPot)
+            numPotToMake = int( min(numMl[2] / 100, 50 - totalCurrPot) )
             list.append(
                     {
                         "potion_type": [0, 0, 100, 0],
