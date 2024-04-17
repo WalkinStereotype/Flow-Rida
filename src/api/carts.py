@@ -117,7 +117,7 @@ def set_item_quantity(cart_id: int, item_sku: str, cart_item: CartItem):
     # global cartss
 
     with db.engine.begin() as connection:
-        potionId = connection.execute(sqlalchemy.text(f"SELECT id FROM potion_inventory WHERE name = '{item_sku}'")).scalar_one()
+        potionId = connection.execute(sqlalchemy.text(f"SELECT id FROM potion_inventory WHERE sku = '{item_sku}'")).scalar_one()
         connection.execute(sqlalchemy.text(f"INSERT INTO cart_items (cart_id, potion_id, quantity) VALUES ({cart_id}, {potionId}, {cart_item.quantity})"))
     
     # if(cart_id not in cartss.keys()):

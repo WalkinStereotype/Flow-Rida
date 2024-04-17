@@ -67,14 +67,20 @@ def get_bottle_plan():
 
     # Initial logic: bottle all barrels into red potions.
     with db.engine.begin() as connection:
-        numMl = [0, 0, 0]
+        numMl = [0, 0, 0, 0]
+        numPot = {}
         numMl[0] = connection.execute(sqlalchemy.text("SELECT num_red_ml FROM global_inventory")).scalar_one()
         numMl[1] = connection.execute(sqlalchemy.text("SELECT num_green_ml FROM global_inventory")).scalar_one()
         numMl[2] = connection.execute(sqlalchemy.text("SELECT num_blue_ml FROM global_inventory")).scalar_one()
         list = []
-        
-        if(numMl[0] >= 100):
-            numPotToMake = numMl[0] / 100
+
+        totalCurrPot = (connection.execute(sqlalchemy.text("SELECT quantity FROM potion_inventory WHERE id = 1")).scalar_one() +
+                connection.execute(sqlalchemy.text("SELECT quantity FROM potion_inventory WHERE id = 2")).scalar_one() +
+                connection.execute(sqlalchemy.text("SELECT quantity FROM potion_inventory WHERE id = 3")).scalar_one()
+        )
+
+        if(numMl[0] >= 100 and totalCurrPot < 50):
+            numPotToMake = min(numMl[0] / 100, 50 - totalCurrPot)
             list.append(
                     {
                         "potion_type": [100, 0, 0, 0],
@@ -82,7 +88,7 @@ def get_bottle_plan():
                     }
             )
         if(numMl[1] >= 100):
-            numPotToMake = numMl[1] / 100
+            numPotToMake = min(numMl[1] / 100, 50 - totalCurrPot)
             list.append(
                     {
                         "potion_type": [0, 100, 0, 0],
@@ -90,7 +96,7 @@ def get_bottle_plan():
                     }
             )
         if(numMl[2] >= 100):
-            numPotToMake = numMl[2] / 100
+            numPotToMake = min(numMl[2] / 100, 50 - totalCurrPot)
             list.append(
                     {
                         "potion_type": [0, 0, 100, 0],
