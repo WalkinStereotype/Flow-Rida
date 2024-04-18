@@ -97,9 +97,9 @@ def create_cart(new_cart: Customer):
 
     with db.engine.begin() as connection:
         connection.execute(sqlalchemy.text(f"INSERT INTO carts (customer_name) VALUES ('{new_cart.customer_name}')"))
-        return connection.execute(sqlalchemy.text(f"SELECT id FROM carts WHERE customer_name = '{new_cart.customer_name}' ORDER BY id desc LIMIT 1")).scalar_one()
+        cart_id = connection.execute(sqlalchemy.text(f"SELECT id FROM carts WHERE customer_name = '{new_cart.customer_name}' ORDER BY id desc LIMIT 1")).scalar_one()
 
-    # return {"cart_id": cart_id}
+    return {"cart_id": cart_id}
 
 
 class CartItem(BaseModel):
