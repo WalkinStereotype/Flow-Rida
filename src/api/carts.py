@@ -96,7 +96,7 @@ def create_cart(new_cart: Customer):
     # INSERT INTO carts (customer_name) VALUES(customer_name) returning id
 
     with db.engine.begin() as connection:
-        connection.execute(sqlalchemy.text(f"INSERT INTO carts (customer_name) VALUES ('{new_cart.customer_name}')"))
+        connection.execute(sqlalchemy.text(f"INSERT INTO carts (customer_name, class, level) VALUES ('{new_cart.customer_name}', '{new_cart.character_class}', {new_cart.level})"))
         cart_id = connection.execute(sqlalchemy.text(f"SELECT id FROM carts WHERE customer_name = '{new_cart.customer_name}' ORDER BY id desc LIMIT 1")).scalar_one()
 
     return {"cart_id": cart_id}
