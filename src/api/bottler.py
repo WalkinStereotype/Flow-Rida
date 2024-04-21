@@ -6,6 +6,8 @@ from enum import Enum
 from pydantic import BaseModel
 from src.api import auth
 
+from sqlalchemy.exc import IntegrityError
+
 router = APIRouter(
     prefix="/bottler",
     tags=["bottler"],
@@ -21,11 +23,25 @@ def post_deliver_bottles(potions_delivered: list[PotionInventory], order_id: int
     """ """
     print(f"potions delievered: {potions_delivered} order_id: {order_id}")
 
-    # Zero everything first
-    mlUsed = [0, 0, 0, 0]
-    numPotMade = 0
-
     with db.engine.begin() as connection:
+
+        try:
+            connection.execute(
+                sqlalchemy.text(
+                    "INSERT INTO processed (job_id, type) VALUES (:order_id, 'potions')"
+                ),
+
+                [{
+                    "order_id": order_id
+                }]
+
+            )
+        except IntegrityError as e:
+            return "OK"
+        
+        # Zero everything first
+        mlUsed = [0, 0, 0, 0]
+        numPotMade = 0
 
         for pot in potions_delivered:
             potion_type = pot.potion_type
@@ -54,9 +70,18 @@ def post_deliver_bottles(potions_delivered: list[PotionInventory], order_id: int
                     "green": potion_type[2],
                     "dark": potion_type[3],
                 }]
-            )        
+            )      
 
         # Update ml_inventory
+        totalMlUsed =  mlUsed[0] + mlUsed[1] + mlUsed[2] + mlUsed[3]
+        connection.execute(
+            sqlalchemy.text(
+                "UPDATE global_inventory SET total_ml = total_ml + :totalMlUsed"
+            ),
+            [{
+                "totalMlUsed": totalMlUsed
+            }]
+        )
         for i in range(4):
             connection.execute(
                 sqlalchemy.text(
@@ -89,7 +114,9 @@ def get_bottle_plan():
         list = []
 
         # Get the maxPotions I can make
-        maxToMake = connection.execute
+        maxToMake = (connection.execute(sqlalchemy.text("SELECT pot_capacity FROM global_inventory")).scalar_one()
+                      - connection.execute(sqlalchemy.text("SELECT total_potions FROM global_inventory")).scalar_one())
+        numPotMade = 0
 
         # Make ml inventory for all colors
         mlInventory = [0, 0, 0, 0]
@@ -99,7 +126,7 @@ def get_bottle_plan():
                 [{
                     "id": (index + 1)
                 }]
-            )
+            ).scalar_one()
 
         # Order potions by lowest quantity
         potionsToMake = connection.execute(
@@ -126,20 +153,19 @@ def get_bottle_plan():
 
         
         # Place to hardcode inventory
-        mlInventory = [300, 250, 800, 0]
+        # mlInventory = [300, 250, 800, 0]
 
         # Updatable plan
         planAsDictionary = {}
 
         # If we don't make a potion, stop
         potionsMade = True 
-        while potionsMade:
+        while potionsMade and (numPotMade < maxToMake):
 
             potionsMade = False
 
             # For each potion
             for p in potionsToMakeAsList:
-                print(f"\t{mlInventory}")
 
                 # If we have enough ml to make one potion
                 if (mlInventory[0] >= p["num_red_ml"] and
@@ -160,10 +186,13 @@ def get_bottle_plan():
                     # Increment tracker's quantity 
                     planAsDictionary[p["id"]] += 1
 
+                    # Quit if maxPotions
+                    numPotMade += 1
+                    if numPotMade >= maxToMake:
+                        break
+
                     # Assert that we made at least one potion
-                    potionsMade = True  
- 
-            print(potionsMade)                
+                    potionsMade = True                 
 
         for id in planAsDictionary:
             potionTypeAsObj = connection.execute(

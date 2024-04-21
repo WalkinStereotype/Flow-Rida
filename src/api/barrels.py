@@ -79,6 +79,18 @@ def post_deliver_barrels(barrels_delivered: list[Barrel], order_id: int):
             }]
         )
 
+        connection.execute(
+            sqlalchemy.text("UPDATE global_inventory SET total_ml  = total_ml + :totalMl"),
+            [{
+                "totalMl": (
+                    mlGained[0] +
+                    mlGained[1] +
+                    mlGained[2] +
+                    mlGained[3]
+                )
+            }]
+        )
+
     return "OK"
 
 # Gets called once a day
@@ -200,7 +212,7 @@ def get_wholesale_purchase_plan(wholesale_catalog: list[Barrel]):
                     # This quantity is the least amount to buy to pass 
                     # the threshold of 'x' times the mLPerBarrel
                     quantToPassThresh = int(((mlPerBarrel * (colorStats.quantity_threshold + 1)) - 
-                                             colorStats.ml) / mlPerBarrel)
+                                             colorStats.ml - 1) / mlPerBarrel)
                     
                     # This quantity is the most barrels I can buy without 
                     # passing the capacity allotted for the color
@@ -230,6 +242,16 @@ def get_wholesale_purchase_plan(wholesale_catalog: list[Barrel]):
                                 "quantity": quantityWanted
                             }
                         )
+                    else:
+                        if(int((mlCapacity * (colorStats.percentage_threshold / 100) - 
+                                               colorStats.ml)) >= listOfSmallBarrels[i].price):
+                            # append 
+                            plan.append(
+                                {
+                                    "sku": listOfSmallBarrels[i].sku,
+                                    "quantity": 1
+                                }
+                            )
                     
     return plan
 

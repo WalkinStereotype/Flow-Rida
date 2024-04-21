@@ -19,17 +19,30 @@ def reset():
     """
 
     with db.engine.begin() as connection:
-        connection.execute(sqlalchemy.text("UPDATE global_inventory SET gold = 100"))
-
-        connection.execute(sqlalchemy.text("UPDATE global_inventory SET num_green_ml = 0"))
-        connection.execute(sqlalchemy.text("UPDATE global_inventory SET num_red_ml = 0"))
-        connection.execute(sqlalchemy.text("UPDATE global_inventory SET num_blue_ml = 0"))
-        connection.execute(sqlalchemy.text("UPDATE global_inventory SET num_dark_ml = 0"))
+        connection.execute(sqlalchemy.text("TRUNCATE global_inventory"))
+        connection.execute(
+            sqlalchemy.text(
+                """INSERT INTO global_inventory 
+                (gold, total_potions, pot_capacity, pot_cap_have, total_ml, ml_capacity, ml_cap_have) 
+                VALUES (:gold, :total_potions, :pot_capacity, :pot_cap_have, :total_ml, :ml_capacity, :ml_cap_have)"""
+            ),
+            [{
+                "gold": 100, 
+                "total_potions": 0, 
+                "pot_capacity": 50,
+                "pot_cap_have": 1, 
+                "total_ml": 0, 
+                "ml_capacity": 10000, 
+                "ml_cap_have": 1
+            }]
+        )
 
         connection.execute(sqlalchemy.text("UPDATE potion_inventory SET quantity = 0"))
+        connection.execute(sqlalchemy.text("UPDATE ml_inventory SET ml = 0"))
 
-        connection.execute(sqlalchemy.text("DELETE FROM carts"))
-        connection.execute(sqlalchemy.text("DELETE FROM cart_items"))
+        connection.execute(sqlalchemy.text("TRUNCATE cart_items"))
+        connection.execute(sqlalchemy.text("TRUNCATE carts CASCADE"))
+        connection.execute(sqlalchemy.text("TRUNCATE processed"))
 
     return "OK"
 
