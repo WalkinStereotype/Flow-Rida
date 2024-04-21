@@ -17,18 +17,9 @@ def get_inventory():
     """ """
 
     with db.engine.begin() as connection:
-        numGreenPot = connection.execute(sqlalchemy.text("SELECT quantity FROM potion_inventory WHERE id = 1")).scalar_one()
-        numRedPot = connection.execute(sqlalchemy.text("SELECT quantity FROM potion_inventory WHERE id = 2")).scalar_one()
-        numBluePot = connection.execute(sqlalchemy.text("SELECT quantity FROM potion_inventory WHERE id = 3")).scalar_one()
-        ml = (
-            connection.execute(sqlalchemy.text("SELECT num_green_ml FROM global_inventory")).scalar_one() +
-            connection.execute(sqlalchemy.text("SELECT num_red_ml FROM global_inventory")).scalar_one() + 
-            connection.execute(sqlalchemy.text("SELECT num_blue_ml FROM global_inventory")).scalar_one() +
-            connection.execute(sqlalchemy.text("SELECT num_dark_ml FROM global_inventory")).scalar_one()
-        )
+        numTotalPot = connection.execute(sqlalchemy.text("SELECT tot--al_potions FROM global_inventory")).scalar_one()
+        ml = connection.execute(sqlalchemy.text("SELECT total_ml FROM global_inventory")).scalar_one()
         gold = connection.execute(sqlalchemy.text("SELECT gold FROM global_inventory")).scalar_one()
-    numTotalPot = numGreenPot + numRedPot + numBluePot
-    
     return {"number_of_potions": numTotalPot, "ml_in_barrels": ml, "gold": gold}
 
 # Gets called once a day

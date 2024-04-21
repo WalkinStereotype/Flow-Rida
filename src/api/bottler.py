@@ -23,35 +23,59 @@ def post_deliver_bottles(potions_delivered: list[PotionInventory], order_id: int
 
     # Zero everything first
     mlUsed = [0, 0, 0, 0]
-    potions = [0, 0, 0]
-
-    for pot in potions_delivered:
-        mlUsed[0] += pot.potion_type[0] * pot.quantity
-        mlUsed[1] += pot.potion_type[1] * pot.quantity
-        mlUsed[2] += pot.potion_type[2] * pot.quantity
-        mlUsed[3] += pot.potion_type[3] * pot.quantity
-
-        if pot.potion_type[0] == 100:
-            potions[0] += pot.quantity
-        elif pot.potion_type[1] == 100:
-            potions[1] += pot.quantity
-        elif pot.potion_type[2] == 100:
-            potions[2] += pot.quantity
-    
-
+    numPotMade = 0
 
     with db.engine.begin() as connection:
-        greenPotGained = potions_delivered[0].quantity
 
-        connection.execute(sqlalchemy.text(f"UPDATE global_inventory SET num_red_ml = num_red_ml - {mlUsed[0]}"))
-        connection.execute(sqlalchemy.text(f"UPDATE global_inventory SET num_green_ml = num_green_ml - {mlUsed[1]}"))
-        connection.execute(sqlalchemy.text(f"UPDATE global_inventory SET num_blue_ml = num_blue_ml - {mlUsed[2]}"))
-        connection.execute(sqlalchemy.text(f"UPDATE global_inventory SET num_dark_ml = num_dark_ml - {mlUsed[3]}"))
+        for pot in potions_delivered:
+            potion_type = pot.potion_type
 
-        connection.execute(sqlalchemy.text(f"UPDATE potion_inventory SET quantity = quantity + {potions[0]} WHERE id = 2"))
-        connection.execute(sqlalchemy.text(f"UPDATE potion_inventory SET quantity = quantity + {potions[1]} WHERE id = 1"))
-        connection.execute(sqlalchemy.text(f"UPDATE potion_inventory SET quantity = quantity + {potions[2]} WHERE id = 3"))
-        # connection.execute(sqlalchemy.text(f"UPDATE potion_inventory SET quantity = quantity + {potions[0] + potions[1] + potions[2]} WHERE id = 'total'"))
+            mlUsed[0] += potion_type[0] * pot.quantity
+            mlUsed[1] += potion_type[1] * pot.quantity
+            mlUsed[2] += potion_type[2] * pot.quantity
+            mlUsed[3] += potion_type[3] * pot.quantity
+
+            # Update numPotMade
+            numPotMade += pot.quantity
+
+            # Update quantity in potion_inventory
+            connection.execute(
+                sqlalchemy.text(
+                    """UPDATE potion_inventory SET quantity = quantity + :quantityBought 
+                    WHERE num_red_ml = :red AND
+                        num_green_ml = :green AND
+                        num_blue_ml = :blue AND 
+                        num_dark_ml = :dark"""
+                ),
+                [{
+                    "quantityBought": pot.quantity,
+                    "red": potion_type[0],
+                    "blue": potion_type[1],
+                    "green": potion_type[2],
+                    "dark": potion_type[3],
+                }]
+            )        
+
+        # Update ml_inventory
+        for i in range(4):
+            connection.execute(
+                sqlalchemy.text(
+                    "UPDATE ml_inventory SET ml = ml - :mlUsed WHERE id = :id"
+                ),
+                [{
+                    "mlUsed":  mlUsed[i],
+                    "id":  i + 1
+                }]
+            )
+
+        connection.execute(
+            sqlalchemy.text(
+                "UPDATE global_inventory SET total_potions =  total_potions + :numPotMade"
+            ),
+            [{
+                "numPotMade": numPotMade
+            }]
+        )
 
     return "OK"
 
@@ -61,51 +85,110 @@ def get_bottle_plan():
     Go from barrel to bottle.
     """
 
-    # Each bottle has a quantity of what proportion of red, blue, and
-    # green potion to add.
-    # Expressed in integers from 1 to 100 that must sum up to 100.
-
-    # Initial logic: bottle all barrels into red potions.
     with db.engine.begin() as connection:
-        numMl = [0, 0, 0, 0]
-        numPot = {}
-        numMl[0] = connection.execute(sqlalchemy.text("SELECT num_red_ml FROM global_inventory")).scalar_one()
-        numMl[1] = connection.execute(sqlalchemy.text("SELECT num_green_ml FROM global_inventory")).scalar_one()
-        numMl[2] = connection.execute(sqlalchemy.text("SELECT num_blue_ml FROM global_inventory")).scalar_one()
         list = []
 
-        totalCurrPot = (connection.execute(sqlalchemy.text("SELECT quantity FROM potion_inventory WHERE id = 1")).scalar_one() +
-                connection.execute(sqlalchemy.text("SELECT quantity FROM potion_inventory WHERE id = 2")).scalar_one() +
-                connection.execute(sqlalchemy.text("SELECT quantity FROM potion_inventory WHERE id = 3")).scalar_one()
+        # Get the maxPotions I can make
+        maxToMake = connection.execute
+
+        # Make ml inventory for all colors
+        mlInventory = [0, 0, 0, 0]
+        for index in range(0,4):
+            mlInventory[index] = connection.execute(
+                sqlalchemy.text("SELECT ml FROM ml_inventory WHERE id = :id"),
+                [{
+                    "id": (index + 1)
+                }]
+            )
+
+        # Order potions by lowest quantity
+        potionsToMake = connection.execute(
+            sqlalchemy.text(
+                """
+                SELECT id, num_red_ml, num_green_ml, num_blue_ml, num_dark_ml 
+                FROM potion_inventory 
+                ORDER BY quantity 
+                """
+            )
         )
 
-        if(numMl[0] >= 100 and totalCurrPot < 50):
-            numPotToMake = min( int(numMl[0] / 100) , 50 - totalCurrPot)
-            list.append( 
-                    {
-                        "potion_type": [100, 0, 0, 0],
-                        "quantity": numPotToMake,
-                    }
+        potionsToMakeAsList = []
+        for p in potionsToMake:
+            potionsToMakeAsList.append(
+                {
+                    "id": p.id,
+                    "num_red_ml": p.num_red_ml,
+                    "num_green_ml": p.num_green_ml,
+                    "num_blue_ml": p.num_blue_ml,
+                    "num_dark_ml": p.num_dark_ml
+                }
             )
-        if(numMl[1] >= 100):
-            numPotToMake = min( int(numMl[1] / 100) , 50 - totalCurrPot)
-            list.append(
-                    {
-                        "potion_type": [0, 100, 0, 0],
-                        "quantity": numPotToMake,
-                    }
-            )
-        if(numMl[2] >= 100):
-            numPotToMake = min( int(numMl[2] / 100) , 50 - totalCurrPot) 
-            list.append(
-                    {
-                        "potion_type": [0, 0, 100, 0],
-                        "quantity": numPotToMake,
-                    }
-            )
+
         
-        
-        return list
+        # Place to hardcode inventory
+        mlInventory = [300, 250, 800, 0]
+
+        # Updatable plan
+        planAsDictionary = {}
+
+        # If we don't make a potion, stop
+        potionsMade = True 
+        while potionsMade:
+
+            potionsMade = False
+
+            # For each potion
+            for p in potionsToMakeAsList:
+                print(f"\t{mlInventory}")
+
+                # If we have enough ml to make one potion
+                if (mlInventory[0] >= p["num_red_ml"] and
+                    mlInventory[1] >= p["num_green_ml"] and
+                    mlInventory[2] >= p["num_blue_ml"] and
+                    mlInventory[3] >= p["num_dark_ml"]):
+
+                    # If it's not already in the dictionary
+                    if not (p["id"] in planAsDictionary.keys()):
+                        planAsDictionary[p["id"]] = 0
+
+                    # Update amount of available ml
+                    mlInventory[0] -= p["num_red_ml"]
+                    mlInventory[1] -= p["num_green_ml"]
+                    mlInventory[2] -= p["num_blue_ml"]
+                    mlInventory[3] -= p["num_dark_ml"]
+
+                    # Increment tracker's quantity 
+                    planAsDictionary[p["id"]] += 1
+
+                    # Assert that we made at least one potion
+                    potionsMade = True  
+ 
+            print(potionsMade)                
+
+        for id in planAsDictionary:
+            potionTypeAsObj = connection.execute(
+                sqlalchemy.text(
+                    "SELECT num_red_ml, num_green_ml, num_blue_ml, num_dark_ml FROM potion_inventory WHERE id = :id"
+                ),
+                [{
+                    "id": id
+                }]
+            ).one()
+            potionType = [0, 0, 0, 0]
+            potionType[0] = potionTypeAsObj.num_red_ml
+            potionType[1] = potionTypeAsObj.num_green_ml
+            potionType[2] = potionTypeAsObj.num_blue_ml
+            potionType[3] = potionTypeAsObj.num_dark_ml
+
+            list.append(
+                {
+                    "potion_type": potionType,
+                    "quantity": planAsDictionary[id]
+                }
+            )
+
+    return list
+
 
 if __name__ == "__main__":
     print(get_bottle_plan())
