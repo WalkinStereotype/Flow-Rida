@@ -129,14 +129,23 @@ def get_bottle_plan():
             ).scalar_one()
 
         # Order potions by lowest quantity
+        softLimit = connection.execute(
+            sqlalchemy.text(
+                "SELECT pot_capacity FROM global_inventory"
+            )
+        ).scalar_one / 5
         potionsToMake = connection.execute(
             sqlalchemy.text(
                 """
                 SELECT id, num_red_ml, num_green_ml, num_blue_ml, num_dark_ml 
                 FROM potion_inventory 
+                WHERE quantity < :softLimit
                 ORDER BY quantity 
                 """
-            )
+            ),
+            [{
+                "softLimit": softLimit
+            }]
         )
 
         potionsToMakeAsList = []
