@@ -41,13 +41,15 @@ def get_capacity_plan():
         goldThresholdMl = x.ml_cap_have * x.gold_threshold_per_unit
 
         if ((x.gold >= goldThresholdPot) and 
-            (x.total_potions >= int(x.pot_capacity * x.pot_percentage_thresh / 100))):
+            (x.total_potions >= int(x.pot_capacity * x.pot_percentage_thresh / 100)) and
+            (x.pot_cap_have < x.ml_cap_have + 2)):
 
             potion_capacity += 1
             goldThresholdMl - 1000
 
         if  ((x.gold >= goldThresholdMl) and  
-            (x.total_ml >= int(x.ml_capacity * x.ml_percentage_thresh / 100))):
+            (x.total_ml >= int(x.ml_capacity * x.ml_percentage_thresh / 100)) and
+            (x.ml_cap_have <= x.pot_cap_have)):
 
             ml_capacity += 1
 
