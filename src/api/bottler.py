@@ -76,7 +76,7 @@ def post_deliver_bottles(potions_delivered: list[PotionInventory], order_id: int
         totalMlUsed =  mlUsed[0] + mlUsed[1] + mlUsed[2] + mlUsed[3]
         connection.execute(
             sqlalchemy.text(
-                "UPDATE global_inventory SET total_ml = total_ml + :totalMlUsed"
+                "UPDATE global_inventory SET total_ml = total_ml - :totalMlUsed"
             ),
             [{
                 "totalMlUsed": totalMlUsed
