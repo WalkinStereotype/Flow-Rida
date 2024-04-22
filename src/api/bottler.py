@@ -133,7 +133,7 @@ def get_bottle_plan():
             sqlalchemy.text(
                 "SELECT pot_capacity FROM global_inventory"
             )
-        ).scalar_one / 5
+        ).scalar_one() / 5
         potionsToMake = connection.execute(
             sqlalchemy.text(
                 """
