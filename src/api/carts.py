@@ -6,6 +6,8 @@ from pydantic import BaseModel
 from src.api import auth
 from enum import Enum
 
+from sqlalchemy.exc import IntegrityError
+
 router = APIRouter(
     prefix="/carts",
     tags=["cart"],
@@ -90,12 +92,19 @@ def create_cart(new_cart: Customer):
     """ """
 
     with db.engine.begin() as connection:
+        tick_id = max(connection.execute(
+            sqlalchemy.text(
+                "SELECT id FROM ticks"
+            )
+        ).scalars())
+
         cart_id = connection.execute(
-            sqlalchemy.text("INSERT INTO carts (customer_name, class, level) VALUES (:customer_name, :character_class, :level) RETURNING id"),
+            sqlalchemy.text("INSERT INTO carts (customer_name, class, level, tick_id) VALUES (:customer_name, :character_class, :level, :tick_id) RETURNING id"),
             [{
                 "customer_name": new_cart.customer_name,
                 "character_class": new_cart.character_class,
-                "level": new_cart.level
+                "level": new_cart.level,
+                "tick_id": tick_id
             }]
         ).scalar_one()
 
@@ -109,7 +118,8 @@ class CartItem(BaseModel):
 def set_item_quantity(cart_id: int, item_sku: str, cart_item: CartItem):
     """ """
 
-    with db.engine.begin() as connection:
+    with db.engine.begin() as connection:       
+
         potionId = connection.execute(
             sqlalchemy.text(
                 "SELECT id FROM potion_inventory WHERE sku = :item_sku"
@@ -139,10 +149,26 @@ class CartCheckout(BaseModel):
 @router.post("/{cart_id}/checkout")
 def checkout(cart_id: int, cart_checkout: CartCheckout):
     """ """
-    totalBought = 0
-    totalGoldPaid = 0
     
     with db.engine.begin() as connection:
+        try:
+            connection.execute(
+                sqlalchemy.text(
+                    "INSERT INTO processed (job_id, type) VALUES (:id, 'cart_checkout')"
+                ),
+
+                [{
+                    "id": cart_id
+                }]
+            )
+        except IntegrityError as e:
+            print("OMG THE CART CHECKOUT DIDN'T GO THROUGH")
+            return {"total_potions_bought": 0, "total_gold_paid": 0}
+
+
+        totalBought = 0
+        totalGoldPaid = 0
+
         results = connection.execute(
             sqlalchemy.text(
                 "SELECT potion_id, quantity FROM cart_items WHERE cart_id = :cart_id"
