@@ -112,6 +112,7 @@ def get_bottle_plan():
 
     with db.engine.begin() as connection:
         list = []
+        return list
 
         # Get the maxPotions I can make
         maxToMake = (connection.execute(sqlalchemy.text("SELECT pot_capacity FROM global_inventory")).scalar_one()
