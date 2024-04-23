@@ -106,7 +106,7 @@ def deliver_capacity_plan(capacity_purchase : CapacityPurchase, order_id: int):
                 "UPDATE global_inventory SET ml_capacity = ml_capacity + :ml_capacity * 10000"
             ),
             [{
-                "potion_capacity": capacity_purchase.potion_capacity
+                "ml_capacity": capacity_purchase.potion_capacity
             }]
         )
         connection.execute(
@@ -114,7 +114,7 @@ def deliver_capacity_plan(capacity_purchase : CapacityPurchase, order_id: int):
                 "UPDATE global_inventory SET ml_cap_have = ml_cap_have + :ml_capacity"
             ),
             [{
-                "potion_capacity": capacity_purchase.potion_capacity
+                "ml_capacity": capacity_purchase.potion_capacity
             }]
         )
     
