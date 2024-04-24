@@ -95,6 +95,7 @@ def deliver_capacity_plan(capacity_purchase : CapacityPurchase, order_id: int):
             ).scalar_one()
         except IntegrityError as e:
             return "OK"
+
         
         #  LEDGERIZING AGAIN
         connection.execute(
@@ -137,6 +138,15 @@ def deliver_capacity_plan(capacity_purchase : CapacityPurchase, order_id: int):
             ),
             [{
                 "ml_capacity": capacity_purchase.potion_capacity
+            }]
+        )
+        connection.execute(
+            sqlalchemy.text(
+                "UPDATE global_inventory SET gold = gold - :gold"
+            ),
+            [{
+                "gold": ((capacity_purchase.potion_capacity + capacity_purchase.ml_capacity) 
+                         * 1000)
             }]
         )
     
