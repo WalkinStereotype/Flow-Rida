@@ -386,16 +386,16 @@ def get_wholesale_purchase_plan(wholesale_catalog: list[Barrel]):
                                 "quantity": quantityWanted
                             }
                         )
-                    else: # 
-                        if(int((mlCapacity * (colorStats.percentage_threshold / 100) - 
-                                               colorStats.ml)) >= listOfSmallBarrels[i].price):
-                            # append 
-                            plan.append(
-                                {
-                                    "sku": listOfSmallBarrels[i].sku,
-                                    "quantity": 1
-                                }
-                            )
+                    # else: 
+                    #     if(int((mlCapacity * (colorStats.percentage_threshold / 100) - 
+                    #                            colorStats.ml)) >= listOfSmallBarrels[i].price):
+                    #         # append 
+                    #         plan.append(
+                    #             {
+                    #                 "sku": listOfSmallBarrels[i].sku,
+                    #                 "quantity": 1
+                    #             }
+                    #         )
                     
     return plan
 
