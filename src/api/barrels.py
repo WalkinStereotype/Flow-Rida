@@ -283,7 +283,7 @@ def get_wholesale_purchase_plan(wholesale_catalog: list[Barrel]):
                                 goldInHand >= listOfLargeBarrels[id - 1].price):
 
                             quantitiesOfLarge[id - 1] += 1
-                            goldInHand -= listOfSmallBarrels[id - 1].price 
+                            goldInHand -= listOfLargeBarrels[id - 1].price 
                             boughtSomething = True 
                             emptyPlan = False
                           
@@ -293,7 +293,7 @@ def get_wholesale_purchase_plan(wholesale_catalog: list[Barrel]):
                     if quantitiesOfLarge[index] > 0:
                         plan.append(
                             {
-                                "sku": listOfSmallBarrels[id - 1].sku,
+                                "sku": listOfLargeBarrels[id - 1].sku,
                                 "quantity": quantitiesOfLarge[index]
                             }
                         )
