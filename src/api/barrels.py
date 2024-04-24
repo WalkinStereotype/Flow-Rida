@@ -312,19 +312,20 @@ def get_wholesale_purchase_plan(wholesale_catalog: list[Barrel]):
                     )
                 ).scalar_one()
 
-                maxToBuy = min(
-                    int((mlCapacity - total_ml) / barrel_to_purchase.ml_per_barrel),
-                    int(goldInHand / barrel_to_purchase.price)
-                )
-
-                if(maxToBuy != 0):
-                    plan.append(
-                        {
-                            "sku": barrel_to_purchase,
-                            "quantity": maxToBuy
-                        }
+                if barrel_to_purchase is not None:
+                    maxToBuy = min(
+                        int((mlCapacity - total_ml) / barrel_to_purchase.ml_per_barrel),
+                        int(goldInHand / barrel_to_purchase.price)
                     )
-                    emptyPlan = False
+
+                    if(maxToBuy != 0):
+                        plan.append(
+                            {
+                                "sku": barrel_to_purchase,
+                                "quantity": maxToBuy
+                            }
+                        )
+                        emptyPlan = False
 
 
                 # Query necessary attributes of color 
