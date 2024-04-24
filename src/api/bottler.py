@@ -43,6 +43,14 @@ def post_deliver_bottles(potions_delivered: list[PotionInventory], order_id: int
         mlUsed = [0, 0, 0, 0]
         numPotMade = 0
 
+        # LEDGERIZING
+        transaction_id = connection.execute(
+            sqlalchemy.text(
+                    "INSERT INTO transactions (description) VALUES ('did not set desc yet')RETURNING id"
+                )
+        ).scalar_one()
+
+        # NOT LEDGERIZING
         for pot in potions_delivered:
             potion_type = pot.potion_type
 
@@ -70,7 +78,26 @@ def post_deliver_bottles(potions_delivered: list[PotionInventory], order_id: int
                     "green": potion_type[2],
                     "dark": potion_type[3],
                 }]
-            )      
+            )
+
+            # LEDGERIZING AGAIN
+            potion_id = connection.execute(
+                sqlalchemy.text(
+                    "SELECT id FROM potion_inventory WHERE potion_type = :potion_type"
+                ),
+                [{
+                    "potion_type": potion_type
+                }]
+            ).scalar_one()
+            connection.execute(
+                sqlalchemy.text("""INSERT INTO potion_ledger_entries (transaction_id, potion_id, quantity) 
+                                VALUES (:transaction_id, :potion_id, :quantity)"""),
+                [{
+                    "transaction_id": transaction_id,
+                    "potion_id": potion_id,
+                    "quantity": pot.quantity 
+                }]
+            )
 
         # Update ml_inventory
         totalMlUsed =  mlUsed[0] + mlUsed[1] + mlUsed[2] + mlUsed[3]
@@ -102,6 +129,31 @@ def post_deliver_bottles(potions_delivered: list[PotionInventory], order_id: int
             }]
         )
 
+        # LEDGERIZING A THIRD TIME
+        connection.execute(
+            sqlalchemy.text(
+                """UPDATE transactions SET description = 
+                'Bottled :numPotMade potions' WHERE id = :id""" 
+            ),
+            [{
+                "numPotMade": numPotMade,
+                "id": transaction_id
+            }]
+        )
+        for i in range(0,4):
+            if mlUsed[i] > 0:
+                connection.execute(
+                    sqlalchemy.text("""INSERT INTO ml_ledger_entries (transaction_id, barrel_id, quantity) 
+                                    VALUES (:transaction_id, :barrel_id, :quantity)"""),
+                    [{
+                        "transaction_id": transaction_id,
+                        "barrel_id": (i + 1),
+                        "quantity": (mlUsed[i] * -1)
+                    }]
+                )
+        
+
+
     return "OK"
 
 @router.post("/plan")
@@ -112,7 +164,6 @@ def get_bottle_plan():
 
     with db.engine.begin() as connection:
         list = []
-        return list
 
         # Get the maxPotions I can make
         maxToMake = (connection.execute(sqlalchemy.text("SELECT pot_capacity FROM global_inventory")).scalar_one()

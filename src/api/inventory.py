@@ -82,8 +82,30 @@ def deliver_capacity_plan(capacity_purchase : CapacityPurchase, order_id: int):
                 }]
 
             )
+
+            # LEDGERIZING
+            transaction_id = connection.execute(
+                sqlalchemy.text(
+                    "INSERT INTO transactions (description) VALUES ('Purchased :ml_cap ml_capacity and :pot_cap pot_capacity') RETURNING id"
+                ),
+                [{
+                    "ml_cap": capacity_purchase.ml_capacity,
+                    "pot_cap": capacity_purchase.potion_capacity
+                }]
+            ).scalar_one()
         except IntegrityError as e:
             return "OK"
+        
+        #  LEDGERIZING AGAIN
+        connection.execute(
+            sqlalchemy.text(
+                "INSERT INTO gold_ledger_entries (transaction_id, quantity) VALUES (:transaction_id, :quantity)"
+            ),
+            [{
+                "transaction_id": transaction_id,
+                "quantity": ((capacity_purchase.potion_capacity + capacity_purchase.ml_capacity) * -1000)
+            }]
+        )
     
         connection.execute(
             sqlalchemy.text(

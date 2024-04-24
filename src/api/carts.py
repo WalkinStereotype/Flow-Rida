@@ -99,7 +99,7 @@ def create_cart(new_cart: Customer):
         ).scalars())
 
         cart_id = connection.execute(
-            sqlalchemy.text("INSERT INTO carts (customer_name, class, level, tick_id) VALUES (:customer_name, :character_class, :level, :tick_id) RETURNING id"),
+            sqlalchemy.text("INSERT INTO carts (customer_name, character_class, level, tick_id) VALUES (:customer_name, :character_class, :level, :tick_id) RETURNING id"),
             [{
                 "customer_name": new_cart.customer_name,
                 "character_class": new_cart.character_class,
@@ -161,6 +161,12 @@ def checkout(cart_id: int, cart_checkout: CartCheckout):
                     "id": cart_id
                 }]
             )
+            # LEDGERIZING
+            transaction_id = connection.execute(
+                sqlalchemy.text(
+                        "INSERT INTO transactions (description) VALUES ('did not set description yet')RETURNING id"
+                    )
+            ).scalar_one()
         except IntegrityError as e:
             print("OMG THE CART CHECKOUT DIDN'T GO THROUGH")
             return {"total_potions_bought": 0, "total_gold_paid": 0}
@@ -199,6 +205,19 @@ def checkout(cart_id: int, cart_checkout: CartCheckout):
                                         "potion_id": cart_items.potion_id
                                     }]
                                 ).scalar_one()) 
+            
+            # LEDGERIZING AGAIN
+            connection.execute(
+                sqlalchemy.text(
+                    """INSERT INTO potion_ledger_entries (transaction_id, potion_id, quantity) 
+                    VALUES (:transaction_id, :potion_id, :quantity)"""
+                ),
+                [{
+                    "transaction_id": transaction_id,
+                    "potion_id": cart_items.potion_id,
+                    "quantity": (cart_items.quantity * -1)
+                }]
+            )
 
         connection.execute(
             sqlalchemy.text(
@@ -216,5 +235,27 @@ def checkout(cart_id: int, cart_checkout: CartCheckout):
                 "totalGoldPaid": totalGoldPaid
             }]
         )
+
+        # LEDGERIZING A THIRD TIME
+        currentCart = connection.execute(sqlalchemy.text("SELECT * FROM carts WHERE id = :cart_id"),
+                                            [{"cart_id": cart_id}]).one()
+        
+        sentence = f"UPDATE transactions SET description = 'Lvl {currentCart.level} {currentCart.character_class} purchased {totalBought} potion(s)' WHERE id = {transaction_id}"
+
+        connection.execute(
+            sqlalchemy.text(sentence)  
+        )
+        connection.execute(
+            sqlalchemy.text(
+                """INSERT INTO gold_ledger_entries (transaction_id, quantity) 
+                VALUES (:transaction_id, :totalGoldPaid)"""
+            ),
+            [{
+                "transaction_id": transaction_id,
+                "totalGoldPaid": totalGoldPaid
+            }]
+        )
+
+
 
     return {"total_potions_bought": totalBought, "total_gold_paid": totalGoldPaid}
