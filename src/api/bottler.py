@@ -236,10 +236,12 @@ if __name__ == "__main__":
     print("Potions made: ")
     print("[")
     for p in list:
+        potion_type = p["potion_type"]
+        quantity = p["quantity"]
         if notFirst:
-            print(f",\n\t{p["potion_type"]}: {p["quantity"]}", end = '')
+            print(f",\n\t{potion_type}: {quantity}", end = '')
         else:
-            print(f"\t{p["potion_type"]}: {p["quantity"]}", end = '')
+            print(f"\t{potion_type}: {quantity}", end = '')
             notFirst = True
     
     print("\n]")
