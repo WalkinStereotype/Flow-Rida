@@ -24,8 +24,22 @@ class Barrel(BaseModel):
 
 @router.post("/deliver/{order_id}")
 def post_deliver_barrels(barrels_delivered: list[Barrel], order_id: int):
+    return []
+
     """ """
     print(f"barrels delievered: {barrels_delivered} order_id: {order_id}")
+
+    notFirst = False
+
+    print("[")
+    for b in barrels_delivered:
+        if notFirst:
+            print(f",\n\t{b.sku}:\n\t\tml: {b.ml_per_barrel}, potion_type: {b.potion_type}, quantity: {b.quantity}", end = '')
+        else:
+            print(f"\t{b.sku}:\n\t\tml: {b.ml_per_barrel}, potion_type: {b.potion_type}, quantity: {b.quantity}", end = '')
+            notFirst = True
+    
+    print("\n]")
 
     with db.engine.begin() as connection:
         try:
@@ -62,38 +76,8 @@ def post_deliver_barrels(barrels_delivered: list[Barrel], order_id: int):
                 raise Exception("Invalid potion type")
 
             goldSpent += b.price * b.quantity
-        
 
-        for i in range(0,4):
-            connection.execute(
-                sqlalchemy.text("UPDATE ml_inventory SET ml = ml + :mlGained WHERE id = :id"),
-                [{
-                    "mlGained": mlGained[i],
-                    "id": (i + 1)
-                }]
-            )
-
-        connection.execute(
-            sqlalchemy.text("UPDATE global_inventory SET gold = gold - :goldSpent"),
-            [{
-                "goldSpent": goldSpent
-            }]
-        )
-
-        connection.execute(
-            sqlalchemy.text("UPDATE global_inventory SET total_ml  = total_ml + :totalMl"),
-            [{
-                "totalMl": (
-                    mlGained[0] +
-                    mlGained[1] +
-                    mlGained[2] +
-                    mlGained[3]
-                )
-            }]
-        )
-
-
-        # LEDGERIZING
+        # Insert into transactions
         transaction_id = connection.execute(
             sqlalchemy.text(
                     "INSERT INTO transactions (description) VALUES ('Purchased :totalMl ml in barrels') RETURNING id"
@@ -131,15 +115,23 @@ def post_deliver_barrels(barrels_delivered: list[Barrel], order_id: int):
                 }]
             )
             
-
-
     return "OK"
 
 # Gets called once a day
 @router.post("/plan")
 def get_wholesale_purchase_plan(wholesale_catalog: list[Barrel]):
     """ """
-    print(wholesale_catalog)
+    print("Catalog: ")
+
+    print("[")
+    for b in wholesale_catalog:
+        if notFirst:
+            print(f",\n\t{b.sku}:\n\t\tml: {b.ml_per_barrel}, potion_type: {b.potion_type}, quantity: {b.quantity}", end = '')
+        else:
+            print(f"\t{b.sku}:\n\t\tml: {b.ml_per_barrel}, potion_type: {b.potion_type}, quantity: {b.quantity}", end = '')
+            notFirst = True
+    
+    print("\n]")
 
     listOfSmallBarrels = {}
     listOfLargeBarrels = {}
@@ -308,7 +300,7 @@ def get_wholesale_purchase_plan(wholesale_catalog: list[Barrel]):
                 barrel_to_purchase = best_barrel(wholesale_catalog, goldInHand, [0, 0, 0, 1])
                 total_ml = connection.execute(
                     sqlalchemy.text(
-                        "SELECT total_ml FROM global_inventory"
+                        "SELECT total_ml FROM total_inventory_view"
                     )
                 ).scalar_one()
 
@@ -353,6 +345,12 @@ def get_wholesale_purchase_plan(wholesale_catalog: list[Barrel]):
                         "barrel_id": (i + 1)
                     }]
                 ).one()
+                colorMl = connection.execute(
+                    sqlalchemy.text("SELECT ml FROM ml_inventory_view WHERE id = :barrel_id"),
+                    [{
+                        "barrel_id": (i + 1)
+                    }]
+                ).scalar_one()
 
                 # Finds barrel type based on i index
                 potion_type_wanted = [int(j == i) for j in range(4)]
@@ -367,7 +365,7 @@ def get_wholesale_purchase_plan(wholesale_catalog: list[Barrel]):
 
                     # Use weird algorithm to find how many barrels to buy
                     if emptyPlan:
-                        quantityWanted = quant_should_buy(barrel_to_purchase, int(goldInHand / divisor), mlCapacity, colorStats)
+                        quantityWanted = quant_should_buy(barrel_to_purchase, int(goldInHand / divisor), mlCapacity, colorStats, colorMl)
                     else:
                         availableSpace = mlCapacity - total_ml
 
@@ -400,19 +398,19 @@ def get_wholesale_purchase_plan(wholesale_catalog: list[Barrel]):
     return plan
 
 
-def quant_should_buy(b: Barrel, gold_available: int, mlCapacity: int, colorStats):
+def quant_should_buy(b: Barrel, gold_available: int, mlCapacity: int, colorStats, colorMl: int):
     # Shortens name of mlPerBarrel
     mlPerBarrel = b.ml_per_barrel
             
     # This quantity is the least amount to buy to pass 
     # the threshold of 'x' times the mLPerBarrel
     quantToPassThresh = int(((mlPerBarrel * (colorStats.quantity_threshold + 1)) - 
-                                colorStats.ml - 1) / mlPerBarrel)
+                                colorMl - 1) / mlPerBarrel)
     
     # This quantity is the most barrels I can buy without 
     # passing the capacity allotted for the color
     quantToFillCapacity = int((mlCapacity * (colorStats.percentage_threshold / 100) - 
-                                colorStats.ml) / mlPerBarrel) 
+                                colorMl) / mlPerBarrel) 
     
 
     # Choose the min between:

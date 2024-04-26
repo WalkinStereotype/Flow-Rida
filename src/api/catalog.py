@@ -13,13 +13,31 @@ def get_catalog():
     """
 
     list = []
+    return []
     
     with db.engine.begin() as connection:
         
-        table = connection.execute(sqlalchemy.text("SELECT * FROM potion_inventory ORDER BY quantity DESC"))
-        numInCatalog = 0
+        table = connection.execute(sqlalchemy.text(
+            """
+            SELECT 
+                potions.id AS id, 
+                sku,
+                name, 
+                SUM(entries.quantity) AS quantity,
+                price, 
+                potion_type
+            FROM potion_inventory AS potions
+            LEFT JOIN potion_ledger_entries AS entries 
+            ON potions.id = entries.potion_id
+            GROUP BY potions.id
+            ORDER BY quantity DESC
+            LIMIT 6
+            """
+        ))
 
         for potion in table:
+            if potion.quantity is None:
+                continue
             if potion.quantity > 0:
                 list.append(
                     {
@@ -27,17 +45,10 @@ def get_catalog():
                         "name": potion.name,
                         "quantity": potion.quantity,
                         "price": potion.price,
-                        "potion_type": [
-                            potion.num_red_ml, 
-                            potion.num_green_ml, 
-                            potion.num_blue_ml, 
-                            potion.num_dark_ml
-                        ]
+                        "potion_type": potion.potion_type
                     }
                 )
-                numInCatalog += 1
-                if numInCatalog == 6:
-                    break
+
 
     return list
 

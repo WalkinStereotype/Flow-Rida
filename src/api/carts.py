@@ -82,7 +82,22 @@ def post_visits(visit_id: int, customers: list[Customer]):
     """
     Which customers visited the shop today?
     """
-    print(customers)
+    notFirst = False
+
+    print(f"visit_id: {visit_id}")
+    print("[")
+    for customer in customers:
+        if notFirst:
+            print(f",\n\tLvl {customer.level} {customer.character_class}: {customer.customer_name}", end = '')
+        else:
+            print(f"\tLvl {customer.level} {customer.character_class}: {customer.customer_name}", end = '')
+            notFirst = True
+    
+    print("\n]")
+
+        
+
+    # print(customers)
 
     return "OK"
 
@@ -92,14 +107,22 @@ def create_cart(new_cart: Customer):
     """ """
 
     with db.engine.begin() as connection:
-        tick_id = max(connection.execute(
+        tick_id = connection.execute(
             sqlalchemy.text(
-                "SELECT id FROM ticks"
+                """
+                SELECT MAX(id) 
+                FROM ticks
+                """
             )
-        ).scalars())
+        ).scalar_one()
 
         cart_id = connection.execute(
-            sqlalchemy.text("INSERT INTO carts (customer_name, character_class, level, tick_id) VALUES (:customer_name, :character_class, :level, :tick_id) RETURNING id"),
+            sqlalchemy.text(
+                """
+                INSERT INTO carts (customer_name, character_class, level, tick_id) 
+                VALUES (:customer_name, :character_class, :level, :tick_id) RETURNING id
+                """
+            ),
             [{
                 "customer_name": new_cart.customer_name,
                 "character_class": new_cart.character_class,
@@ -164,7 +187,7 @@ def checkout(cart_id: int, cart_checkout: CartCheckout):
             # LEDGERIZING
             transaction_id = connection.execute(
                 sqlalchemy.text(
-                        "INSERT INTO transactions (description) VALUES ('did not set description yet')RETURNING id"
+                        "INSERT INTO transactions (description) VALUES ('did not set description yet') RETURNING id"
                     )
             ).scalar_one()
         except IntegrityError as e:
@@ -185,16 +208,6 @@ def checkout(cart_id: int, cart_checkout: CartCheckout):
         )
 
         for cart_items in results:
-            connection.execute(
-                sqlalchemy.text(
-                    "UPDATE potion_inventory SET quantity = quantity - :quantity WHERE id = :potion_id"
-                ),
-                [{
-                    "quantity": cart_items.quantity,
-                    "potion_id": cart_items.potion_id
-                }]
-            )
-
             totalBought += cart_items.quantity
             totalGoldPaid += (cart_items.quantity * 
                                 connection.execute(
@@ -219,22 +232,6 @@ def checkout(cart_id: int, cart_checkout: CartCheckout):
                 }]
             )
 
-        connection.execute(
-            sqlalchemy.text(
-                "UPDATE global_inventory SET total_potions = total_potions - :totalBought"
-            ),
-            [{
-                "totalBought": totalBought
-            }]
-        )
-        connection.execute(
-            sqlalchemy.text(
-                "UPDATE global_inventory SET gold = gold + :totalGoldPaid"
-            ),
-            [{
-                "totalGoldPaid": totalGoldPaid
-            }]
-        )
 
         # LEDGERIZING A THIRD TIME
         currentCart = connection.execute(sqlalchemy.text("SELECT * FROM carts WHERE id = :cart_id"),
