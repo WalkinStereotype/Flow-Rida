@@ -141,30 +141,21 @@ def get_bottle_plan():
         mlInventory = [0, 0, 0, 0]
         for index in range(0,4):
             mlInventory[index] = connection.execute(
-                sqlalchemy.text("SELECT ml FROM ml_inventory_view WHERE id = :id"),
+                sqlalchemy.text("SELECT quantity FROM ml_inventory_view WHERE id = :id"),
                 [{
                     "id": (index + 1)
                 }]
             ).scalar_one()
 
-        # Order potions by lowest quantity
-        softLimit = int(connection.execute(
-            sqlalchemy.text(
-                "SELECT pot_capacity FROM global_inventory"
-            )
-        ).scalar_one() / 6)
+        # Query all id's, potion types, and quantities
         potionsToMake = connection.execute(
             sqlalchemy.text(
                 """
-                SELECT id, potion_type 
-                FROM potion_inventory 
-                WHERE quantity < :softLimit
+                SELECT id, potion_type, quantity
+                FROM potion_inventory_view
                 ORDER BY quantity 
                 """
-            ),
-            [{
-                "softLimit": softLimit
-            }]
+            )
         )
 
         potionsToMakeAsList = []
@@ -172,7 +163,9 @@ def get_bottle_plan():
             potionsToMakeAsList.append(
                 {
                     "id": p.id,
-                    "potion_type": p.potion_type
+                    "potion_type": p.potion_type,
+                    "quantity": p.quantity,
+                    "numMade" : 0
                 }
             )
 
@@ -183,12 +176,18 @@ def get_bottle_plan():
         # Updatable plan
         planAsDictionary = {}
 
-        # If we don't make a potion, stop
-        potionsMade = True 
-        while potionsMade and (numPotMade < maxToMake):
+        # Get min quantity as (num to start iterating from) and
+        # max quality as (num to stop iterating at)
+        quantTracker, maxQuant = connection.execute(sqlalchemy.text(
+            """
+            SELECT COALESCE(MIN(quantity), 0) AS quantTracker,
+            COALESCE(MAX(quantity), 0) AS max
+            FROM potion_inventory_view
+            """
+        )).first()
 
-            potionsMade = False
-
+        # While the quantTracker has not reached the max quantity
+        while quantTracker <= maxQuant:
             # For each potion
             for p in potionsToMakeAsList:
                 id = p["id"]
@@ -200,41 +199,30 @@ def get_bottle_plan():
                     mlInventory[2] >= potion_type[2] and
                     mlInventory[3] >= potion_type[3]):
 
-                    # If it's not already in the dictionary
-                    if not (id in planAsDictionary.keys()):
-                        planAsDictionary[id] = 0
-
                     # Update amount of available ml
                     mlInventory[0] -= potion_type[0]
                     mlInventory[1] -= potion_type[1]
                     mlInventory[2] -= potion_type[2]
                     mlInventory[3] -= potion_type[3]
 
-                    # Increment tracker's quantity 
-                    planAsDictionary[id] += 1
+                    # Increment quantity and numMade of potion
+                    p["quantity"] += 1
+                    p["numMade"] += 1
+
+                    # Increase maxQuant if necessary
+                    if p["quantity"] > maxQuant:
+                        maxQuant = p["quantity"]
 
                     # Quit if maxPotions
                     numPotMade += 1
                     if numPotMade >= maxToMake:
-                        break
+                        break              
 
-                    # Assert that we made at least one potion
-                    potionsMade = True                 
-
-        for id in planAsDictionary:
-            potionType = connection.execute(
-                sqlalchemy.text(
-                    "SELECT potion_type FROM potion_inventory WHERE id = :id"
-                ),
-                [{
-                    "id": id
-                }]
-            ).one()
-
+        for p in potionsToMakeAsList:
             list.append(
                 {
-                    "potion_type": potionType,
-                    "quantity": planAsDictionary[id]
+                    "potion_type": p["potion_type"],
+                    "quantity": p["numMade"]
                 }
             )
 

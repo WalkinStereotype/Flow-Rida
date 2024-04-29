@@ -133,9 +133,9 @@ def get_wholesale_purchase_plan(wholesale_catalog: list[Barrel]):
     print("[")
     for b in wholesale_catalog:
         if notFirst:
-            print(f",\n\t{b.sku}:\n\t\tml: {b.ml_per_barrel}, potion_type: {b.potion_type}, quantity: {b.quantity}", end = '')
+            print(f",\n\t{b.sku}:\n\t\tml: {b.ml_per_barrel}, potion_type: {b.potion_type}, price: {b.price}, quantity: {b.quantity}", end = '')
         else:
-            print(f"\t{b.sku}:\n\t\tml: {b.ml_per_barrel}, potion_type: {b.potion_type}, quantity: {b.quantity}", end = '')
+            print(f"\t{b.sku}:\n\t\tml: {b.ml_per_barrel}, potion_type: {b.potion_type}, price: {b.price}, quantity: {b.quantity}", end = '')
             notFirst = True
     
     print("\n]")
@@ -335,7 +335,7 @@ def get_wholesale_purchase_plan(wholesale_catalog: list[Barrel]):
                         barrel_to_purchase.quantity
                     )
 
-                    if(maxToBuy != 0):
+                    if(maxToBuy > 0):
                         plan.append(
                             {
                                 "sku": barrel_to_purchase,
@@ -393,7 +393,7 @@ def get_wholesale_purchase_plan(wholesale_catalog: list[Barrel]):
                             )
                         
                         # Don't add if one constraint prohibits us from buying
-                        if(quantityWanted != 0):
+                        if(quantityWanted > 0):
 
                             # append 
                             plan.append(
