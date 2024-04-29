@@ -13,7 +13,6 @@ def get_catalog():
     """
 
     list = []
-    return []
     
     with db.engine.begin() as connection:
         
@@ -49,7 +48,7 @@ def get_catalog():
                     }
                 )
 
-
+    print(list)
     return list
 
 

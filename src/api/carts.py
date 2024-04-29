@@ -207,6 +207,8 @@ def checkout(cart_id: int, cart_checkout: CartCheckout):
             }]
         )
 
+        tick_id = connection.execute(sqlalchemy.text("SELECT MAX(id) FROM ticks")).scalar_one()
+
         for cart_items in results:
             totalBought += cart_items.quantity
             totalGoldPaid += (cart_items.quantity * 
@@ -222,13 +224,14 @@ def checkout(cart_id: int, cart_checkout: CartCheckout):
             # LEDGERIZING AGAIN
             connection.execute(
                 sqlalchemy.text(
-                    """INSERT INTO potion_ledger_entries (transaction_id, potion_id, quantity) 
+                    """INSERT INTO potion_ledger_entries (transaction_id, potion_id, quantity, tick_id) 
                     VALUES (:transaction_id, :potion_id, :quantity)"""
                 ),
                 [{
                     "transaction_id": transaction_id,
                     "potion_id": cart_items.potion_id,
-                    "quantity": (cart_items.quantity * -1)
+                    "quantity": (cart_items.quantity * -1),
+                    "tick_id": tick_id
                 }]
             )
 

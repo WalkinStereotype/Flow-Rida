@@ -21,10 +21,24 @@ class PotionInventory(BaseModel):
 @router.post("/deliver/{order_id}")
 def post_deliver_bottles(potions_delivered: list[PotionInventory], order_id: int):
     """ """
-    print(f"potions delievered: {potions_delivered} order_id: {order_id}")
+    # print(f"potions delievered: {potions_delivered} order_id: {order_id}")
 
+    # Print barrels better
+    notFirst = False
+    print("Barrels delievered:")
+    print("[")
+    for b in potions_delivered:
+        if notFirst:
+            print(f",\n\t{b.potion_type}: {b.quantity} potion(s)", end = '')
+        else:
+            print(f"\t{b.potion_type}: {b.quantity} potions(s)", end = '')
+            notFirst = True
+    
+    print("\n]")
+    print(f"order_id: {order_id}")
+
+    # Catch any integrity errors
     with db.engine.begin() as connection:
-
         try:
             connection.execute(
                 sqlalchemy.text(
@@ -54,6 +68,7 @@ def post_deliver_bottles(potions_delivered: list[PotionInventory], order_id: int
         for pot in potions_delivered:
             potion_type = pot.potion_type
 
+            # Log ml used for this potion for each color
             mlUsed[0] += potion_type[0] * pot.quantity
             mlUsed[1] += potion_type[1] * pot.quantity
             mlUsed[2] += potion_type[2] * pot.quantity
@@ -113,8 +128,6 @@ def get_bottle_plan():
     """
     Go from barrel to bottle.
     """
-
-    return []
 
     with db.engine.begin() as connection:
         list = []
