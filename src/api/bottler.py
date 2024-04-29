@@ -190,7 +190,6 @@ def get_bottle_plan():
         while quantTracker <= maxQuant:
             # For each potion
             for p in potionsToMakeAsList:
-                id = p["id"]
                 potion_type = p["potion_type"]
 
                 # If we have enough ml to make one potion
