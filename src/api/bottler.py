@@ -25,7 +25,7 @@ def post_deliver_bottles(potions_delivered: list[PotionInventory], order_id: int
 
     # Print barrels better
     notFirst = False
-    print("Barrels delievered:")
+    print("Potions delievered:")
     print("[")
     for b in potions_delivered:
         if notFirst:
@@ -172,9 +172,6 @@ def get_bottle_plan():
         
         # Place to hardcode inventory
         # mlInventory = [300, 250, 800, 0]
-
-        # Updatable plan
-        planAsDictionary = {}
 
         # Get min quantity as (num to start iterating from) and
         # max quality as (num to stop iterating at)

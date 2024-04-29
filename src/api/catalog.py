@@ -49,6 +49,18 @@ def get_catalog():
                 )
 
     print(list)
+    # Print barrels 2.0
+    print("My catalog: ")
+    notFirst = False
+    print("[")
+    for p in list:
+        if notFirst:
+            print(f",\n\t{p["sku"]} ({p["name"]}):\n\t\tquantity: {p["quantity"]}, price: {p["price"]}, potion_type: {p["potion_type"]}", end = '')
+        else:
+            print(f"\t{p["sku"]} ({p["name"]}):\n\t\tquantity: {p["quantity"]}, price: {p["price"]}, potion_type: {p["potion_type"]}", end = '')
+            notFirst = True
+    
+    print("\n]")
     return list
 
 

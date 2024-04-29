@@ -128,7 +128,7 @@ def get_wholesale_purchase_plan(wholesale_catalog: list[Barrel]):
     """ """
 
     # Print barrels 2.0
-    print("Catalog: ")
+    print("Barrel catalog: ")
     notFirst = False
     print("[")
     for b in wholesale_catalog:
