@@ -98,7 +98,7 @@ def deliver_capacity_plan(capacity_purchase : CapacityPurchase, order_id: int):
             # LEDGERIZING
             transaction_id = connection.execute(
                 sqlalchemy.text(
-                    "INSERT INTO transactions (description) VALUES ('Purchased :ml_cap ml_capacity and :pot_cap pot_capacity') RETURNING id"
+                    "INSERT INTO transactions (type, description) VALUES ('capacity purchasing', 'Purchased :ml_cap ml_capacity and :pot_cap pot_capacity') RETURNING id"
                 ),
                 [{
                     "ml_cap": capacity_purchase.ml_capacity,

@@ -60,7 +60,7 @@ def post_deliver_bottles(potions_delivered: list[PotionInventory], order_id: int
         # Insert into transactions
         transaction_id = connection.execute(
             sqlalchemy.text(
-                    "INSERT INTO transactions (description) VALUES ('did not set desc yet') RETURNING id"
+                    "INSERT INTO transactions (type, description) VALUES ('bottling', 'did not set desc yet') RETURNING id"
                 )
         ).scalar_one()
 

@@ -82,7 +82,7 @@ def post_deliver_barrels(barrels_delivered: list[Barrel], order_id: int):
         # Insert into transactions
         transaction_id = connection.execute(
             sqlalchemy.text(
-                    "INSERT INTO transactions (description) VALUES ('Purchased :totalMl ml in barrels') RETURNING id"
+                    "INSERT INTO transactions (type, description) VALUES ('barrel purchasing', 'Purchased :totalMl ml in barrels') RETURNING id"
                 ),
 
                 [{

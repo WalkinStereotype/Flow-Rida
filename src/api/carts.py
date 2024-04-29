@@ -187,7 +187,7 @@ def checkout(cart_id: int, cart_checkout: CartCheckout):
             # LEDGERIZING
             transaction_id = connection.execute(
                 sqlalchemy.text(
-                        "INSERT INTO transactions (description) VALUES ('did not set description yet') RETURNING id"
+                        "INSERT INTO transactions (type, description) VALUES ('cart checkout', 'did not set description yet') RETURNING id"
                     )
             ).scalar_one()
         except IntegrityError as e:
