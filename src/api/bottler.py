@@ -141,7 +141,7 @@ def get_bottle_plan():
         mlInventory = [0, 0, 0, 0]
         for index in range(0,4):
             mlInventory[index] = connection.execute(
-                sqlalchemy.text("SELECT quantity FROM ml_inventory_view WHERE id = :id"),
+                sqlalchemy.text("SELECT quantity FROM ml_inventory_view WHERE barrel_id = :id"),
                 [{
                     "id": (index + 1)
                 }]
@@ -151,7 +151,7 @@ def get_bottle_plan():
         potionsToMake = connection.execute(
             sqlalchemy.text(
                 """
-                SELECT id, potion_type, quantity
+                SELECT potion_id, potion_type, quantity
                 FROM potion_inventory_view
                 ORDER BY quantity 
                 """
@@ -162,7 +162,7 @@ def get_bottle_plan():
         for p in potionsToMake:
             potionsToMakeAsList.append(
                 {
-                    "id": p.id,
+                    "id": p.potion_id,
                     "potion_type": p.potion_type,
                     "quantity": p.quantity,
                     "numMade" : 0
@@ -215,15 +215,17 @@ def get_bottle_plan():
                     # Quit if maxPotions
                     numPotMade += 1
                     if numPotMade >= maxToMake:
-                        break              
+                        break 
+            quantTracker += 1             
 
         for p in potionsToMakeAsList:
-            list.append(
-                {
-                    "potion_type": p["potion_type"],
-                    "quantity": p["numMade"]
-                }
-            )
+            if p["numMade"] > 0:
+                list.append(
+                    {
+                        "potion_type": p["potion_type"],
+                        "quantity": p["numMade"]
+                    }
+                )
 
     return list
 

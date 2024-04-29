@@ -22,7 +22,7 @@ def get_catalog():
                 potions.id AS id, 
                 sku,
                 name, 
-                SUM(entries.quantity) AS quantity,
+                COALESCE(SUM(entries.quantity), 0) AS quantity,
                 price, 
                 potion_type
             FROM potion_inventory AS potions

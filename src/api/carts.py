@@ -225,7 +225,7 @@ def checkout(cart_id: int, cart_checkout: CartCheckout):
             connection.execute(
                 sqlalchemy.text(
                     """INSERT INTO potion_ledger_entries (transaction_id, potion_id, quantity, tick_id) 
-                    VALUES (:transaction_id, :potion_id, :quantity)"""
+                    VALUES (:transaction_id, :potion_id, :quantity, :tick_id)"""
                 ),
                 [{
                     "transaction_id": transaction_id,
