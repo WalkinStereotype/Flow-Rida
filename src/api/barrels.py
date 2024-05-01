@@ -460,6 +460,22 @@ def get_wholesale_purchase_plan(wholesale_catalog: list[Barrel]):
 
     #         organizedCatalog[color].append(b)
 
+# continue with phase one
+
+# phase 2:
+#     if there are large:
+#         if large barrel size <= large color threshold and (enough gold):
+#             buy as many as you can
+#     for each color in rgb:
+#         if large barrel of that color hasnt been bought:
+#             if medium exists:
+#                 if medium barrel size <= reg_threshold - color_capacity and (enough gold)
+#                     buy as much as you can without going over reg_threshold
+#                 else:
+#                     try to buy only one small Barrel
+#             else:
+#                 try to buy as many small barrels as possible
+
 
 
 

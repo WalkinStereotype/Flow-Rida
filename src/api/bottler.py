@@ -190,7 +190,7 @@ def get_bottle_plan():
         )).first()
 
         # While the quantTracker has not reached the max quantity
-        while quantTracker <= maxQuant:
+        while quantTracker <= maxQuant and numPotMade < maxToMake:
             # For each potion
             for p in potionsToMakeAsList:
                 potion_type = p["potion_type"]
