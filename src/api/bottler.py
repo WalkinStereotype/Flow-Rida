@@ -155,7 +155,7 @@ def get_bottle_plan():
                 """
                 SELECT potion_id, potion_type, quantity
                 FROM potion_inventory_view
-                WHERE quantity < :softLimit
+                WHERE NOT blacklisted AND quantity < :softLimit
                 ORDER BY quantity 
                 """
             ),
