@@ -357,7 +357,7 @@ def get_wholesale_purchase_plan(wholesale_catalog: list[Barrel]):
                 if quantitiesOfLarge[i] == 0:
                     # Query necessary attributes of color 
                     colorStats = connection.execute(
-                        sqlalchemy.text("SELECT id, ml, quantity_threshold, percentage_threshold FROM ml_inventory WHERE id = :barrel_id"),
+                        sqlalchemy.text("SELECT id, quantity_threshold, percentage_threshold FROM ml_inventory WHERE id = :barrel_id"),
                         [{
                             "barrel_id": (i + 1)
                         }]
@@ -404,6 +404,67 @@ def get_wholesale_purchase_plan(wholesale_catalog: list[Barrel]):
                             )
                     
     return plan
+
+    # with db.engine.begin() as connection:
+    #     mediumPresent = False
+    #     largePresent = False
+    #     sumSmallPrice = 0
+
+    #     goldInHand = connection.execute(sqlalchemy.text(
+    #         "SELECT gold FROM total_inventory_view"
+    #     ))
+    #     colorStatsList = connection.execute(sqlalchemy.text(
+    #         """
+    #         SELECT
+    #             id, 
+    #             barrels.color,
+    #             barrel_quantities.quantity,
+    #             barrels.reg_threshold,
+    #             barrels.large_threshold
+    #         FROM ml_inventory AS barrels
+    #         JOIN ml_inventory_view AS barrel_quantities
+    #         ON barrels.id = barrel_quantities.barrel_id
+    #         ORDER BY id
+    #         """
+    #     )).fetchall()
+
+    #     organizedCatalog = {
+    #         "red": [],
+    #         "green":[],
+    #         "blue": [],
+    #         "dark": []
+    #     }
+
+    #     # Find any small, medium, large
+    #     for b in wholesale_catalog:
+    #         color = ""
+    #         match b.potion_type:
+    #             case [1, 0, 0, 0]:
+    #                 color = "red"
+    #             case [0, 1, 0, 0]:
+    #                 color = "green"
+    #             case [0, 0, 1, 0]:
+    #                 color = "blue"
+    #             case [0, 0, 0, 1]:
+    #                 color = "dark"
+    #             case _:
+    #                 print("bro HUH?")
+    #                 return []
+            
+    #         if "SMALL" in b.sku:
+    #             sumSmallPrice += b.price
+    #         if "MEDIUM" in b.sku:
+    #             mediumPresent = True
+    #         if "LARGE" in b.sku:
+    #             largePresent = True
+
+    #         organizedCatalog[color].append(b)
+
+
+
+
+        
+                
 
 
 def quant_should_buy(b: Barrel, gold_available: int, mlCapacity: int, colorStats, colorMl: int):

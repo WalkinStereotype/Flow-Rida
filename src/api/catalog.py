@@ -48,8 +48,9 @@ def get_catalog():
                     }
                 )
 
-    print(list)
-    # Print barrels 2.0
+    # print(list)
+
+    # Print catalog 2.0
     print("My catalog: ")
     notFirst = False
     print("[")

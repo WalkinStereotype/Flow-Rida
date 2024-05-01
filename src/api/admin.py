@@ -49,7 +49,7 @@ def reset():
         connection.execute(sqlalchemy.text("TRUNCATE ticks CASCADE"))
 
         transaction_id = connection.execute(sqlalchemy.text(
-            """INSERT INTO transactions (description) VALUES (:description) RETURNING id"""),
+            """INSERT INTO transactions (type, description) VALUES ('Admin', :description) RETURNING id"""),
             [{"description": "Initializing values"}]
         ).scalar()
 

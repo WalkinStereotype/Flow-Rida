@@ -133,7 +133,9 @@ def get_bottle_plan():
         list = []
 
         # Get the maxPotions I can make
-        maxToMake = (connection.execute(sqlalchemy.text("SELECT pot_capacity FROM global_inventory")).scalar_one()
+        limit_per_capacity = 20
+        pot_capacity = connection.execute(sqlalchemy.text("SELECT pot_capacity FROM global_inventory")).scalar_one()
+        maxToMake = (pot_capacity
                       - connection.execute(sqlalchemy.text("SELECT total_potions FROM total_inventory_view")).scalar_one())
         numPotMade = 0
 
@@ -154,8 +156,12 @@ def get_bottle_plan():
                 SELECT potion_id, potion_type, quantity
                 FROM potion_inventory_view
                 ORDER BY quantity 
+                WHERE quantity < :softLimit
                 """
-            )
+            ),
+            [{
+                "softLimit": pot_capacity * limit_per_capacity
+            }]
         )
 
         potionsToMakeAsList = []
