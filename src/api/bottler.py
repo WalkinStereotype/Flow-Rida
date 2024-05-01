@@ -155,12 +155,12 @@ def get_bottle_plan():
                 """
                 SELECT potion_id, potion_type, quantity
                 FROM potion_inventory_view
-                ORDER BY quantity 
                 WHERE quantity < :softLimit
+                ORDER BY quantity 
                 """
             ),
             [{
-                "softLimit": pot_capacity * limit_per_capacity
+                "softLimit":(pot_capacity * limit_per_capacity // 50)
             }]
         )
 
