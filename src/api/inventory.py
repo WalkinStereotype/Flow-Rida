@@ -29,6 +29,7 @@ def get_inventory():
                 FROM total_inventory_view"""
             )
         ).one()
+    print(f"number of potions: {x.total_potions}, ml_in_barrels: {x.total_ml}, gold: {x.gold}")
     return {"number_of_potions": x.total_potions, "ml_in_barrels": x.total_ml, "gold": x.gold}
 
 # Gets called once a day
@@ -43,7 +44,15 @@ def get_capacity_plan():
     ml_capacity = 0
 
     with db.engine.begin() as connection:
-        x = connection.execute(sqlalchemy.text("SELECT * FROM global_inventory")).one()
+        x = connection.execute(sqlalchemy.text(
+            """
+            SELECT 
+                pot_capacity, pot_cap_have, pot_percentage_thresh, 
+                ml_capacity, ml_cap_have, ml_percentage_thresh,
+                gold_threshold_per_unit
+            FROM global_inventory
+            """
+        )).one()
         resultFromView = connection.execute(
             sqlalchemy.text(
                 "SELECT * FROM total_inventory_view"
@@ -132,7 +141,81 @@ def deliver_capacity_plan(capacity_purchase : CapacityPurchase, order_id: int):
             ),
             [{
                 "potion_capacity": capacity_purchase.potion_capacity,
-                "ml_capacity": capacity_purchase.potion_capacity
+                "ml_capacity": capacity_purchase.ml_capacity
             }]
         )
+
+        # Updating thresholds
+        ml_capacity = connection.execute(
+            sqlalchemy.text(
+                "SELECT ml_capacity FROM global_inventory"
+            )
+        ).scalar_one()
+
+        if ml_capacity <= 60000:
+            x = connection.execute(
+                sqlalchemy.text(
+                    """
+                    SELECT 
+                        reg_red_threshold,
+                        large_red_threshold,
+                        reg_green_threshold,
+                        large_green_threshold,
+                        reg_blue_threshold,
+                        large_blue_threshold,
+                        large_dark_threshold
+                    FROM ml_thresholds
+                    WHERE ml_capacity = :ml_capacity
+                    """
+                ),
+                [{
+                    "ml_capacity": ml_capacity
+                }]
+            ).fetchone()
+
+            thresholds = {
+                "reg": {
+                    "red": x[0],
+                    "green": x[2],
+                    "blue": x[4],
+                    "dark": x[6]
+                },
+                "large": {
+                    "red": x[1],
+                    "green": x[3],
+                    "blue": x[5],
+                    "dark": x[6]
+                }
+            }
+
+            for color in ["red", "green", "blue", "dark"]:
+                connection.execute(
+                    sqlalchemy.text(
+                        """
+                        UPDATE ml_inventory
+                        SET reg_threshold = :reg,
+                        large_threshold = :large
+                        WHERE color = :color
+                        """
+                    ),
+                    [{
+                        "reg": thresholds["reg"][color],
+                        "large": thresholds["large"][color],
+                        "color": color
+                    }]
+                )
+
+        else:
+            connection.execute(
+                sqlalchemy.text(
+                    """
+                    UPDATE ml_inventory 
+                    SET reg_threshold = reg_threshold + 1250 * ml_cap,
+                    large_threshold = large_threshold + 2500 * ml_cap
+                    """
+                ), 
+                [{
+                    "ml_units_bought": capacity_purchase.ml_capacity
+                }]
+            )
     return "OK"
