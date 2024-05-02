@@ -141,90 +141,344 @@ def get_wholesale_purchase_plan(wholesale_catalog: list[Barrel]):
     print("\n]")
 
 
-    # Place to store info of small or large barrels, if any
-    listOfSmallBarrels = {}
-    listOfLargeBarrels = {}
+    # # Place to store info of small or large barrels, if any
+    # listOfSmallBarrels = {}
+    # listOfLargeBarrels = {}
 
-    # Variable used to declare whether in phase 1 or 2 of buying barrels
-    sumSmallPrice = 0
+    # # Variable used to declare whether in phase 1 or 2 of buying barrels
+    # sumSmallPrice = 0
 
-    # For phase 2: 
-    hasDark = False
-    # hasLarge = False # may not be needed (if listOfLargeBarrels is empty)
-    divisor = 3
+    # # For phase 2: 
+    # hasDark = False
+    # # hasLarge = False # may not be needed (if listOfLargeBarrels is empty)
+    # divisor = 3
 
 
-    for barrel in wholesale_catalog:
-        # If there are dark barrels for sale
-        if(barrel.potion_type == [0, 0, 0, 1]):
-            hasDark = True
+    # for barrel in wholesale_catalog:
+    #     # If there are dark barrels for sale
+    #     if(barrel.potion_type == [0, 0, 0, 1]):
+    #         hasDark = True
         
-        # If there is some sort of large barrel lmao
-        if(("LARGE" in barrel.sku and barrel.ml_per_barrel > 5000) or
-           (barrel.ml_per_barrel >= 7500)):
-            # hasLarge = True
+    #     # If there is some sort of large barrel lmao
+    #     if(("LARGE" in barrel.sku and barrel.ml_per_barrel > 5000) or
+    #        (barrel.ml_per_barrel >= 7500)):
+    #         # hasLarge = True
 
-            # Add in barrel into list of small barrels
-            for index in range(4):
+    #         # Add in barrel into list of small barrels
+    #         for index in range(4):
 
-                # Find the potion type of barrel
-                if barrel.potion_type[index] > 0:
+    #             # Find the potion type of barrel
+    #             if barrel.potion_type[index] > 0:
 
-                    # If barrel type is already in dictionary 
-                        # (niche case i will say)
-                    if index in listOfLargeBarrels.keys():
+    #                 # If barrel type is already in dictionary 
+    #                     # (niche case i will say)
+    #                 if index in listOfLargeBarrels.keys():
 
-                        # If the barrel's price is less than the current price
-                        if barrel.price < listOfLargeBarrels[index].price:
+    #                     # If the barrel's price is less than the current price
+    #                     if barrel.price < listOfLargeBarrels[index].price:
 
-                            # Take care of sum and update list
-                            listOfLargeBarrels[index] = barrel
+    #                         # Take care of sum and update list
+    #                         listOfLargeBarrels[index] = barrel
 
-                    else: 
-                        # If barrel type not in dictionary, add barrel
-                        listOfLargeBarrels[index] = barrel
+    #                 else: 
+    #                     # If barrel type not in dictionary, add barrel
+    #                     listOfLargeBarrels[index] = barrel
 
-                    break
+    #                 break
 
-        # If there is some version of a small barrel lmao
-        if (("SMALL" in barrel.sku and barrel.ml_per_barrel < 700) or 
-            (barrel.ml_per_barrel >= 450 and barrel.ml_per_barrel <= 550)):
+    #     # If there is some version of a small barrel lmao
+    #     if (("SMALL" in barrel.sku and barrel.ml_per_barrel < 700) or 
+    #         (barrel.ml_per_barrel >= 450 and barrel.ml_per_barrel <= 550)):
                 
-            # Add in barrel into list of small barrels
-            for index in range(4):
+    #         # Add in barrel into list of small barrels
+    #         for index in range(4):
 
-                # Find the potion type of barrel
-                if barrel.potion_type[index] > 0:
+    #             # Find the potion type of barrel
+    #             if barrel.potion_type[index] > 0:
 
-                    # If barrel type is already in dictionary 
-                        # (niche case i will say)
-                    if index in listOfSmallBarrels.keys():
+    #                 # If barrel type is already in dictionary 
+    #                     # (niche case i will say)
+    #                 if index in listOfSmallBarrels.keys():
 
-                        # If the barrel's price is less than the current price
-                        if barrel.price < listOfSmallBarrels[index].price:
+    #                     # If the barrel's price is less than the current price
+    #                     if barrel.price < listOfSmallBarrels[index].price:
 
-                            # Take care of sum and update list
-                            sumSmallPrice -= listOfSmallBarrels[index].price
-                            listOfSmallBarrels[index] = barrel
-                            sumSmallPrice += barrel.price
+    #                         # Take care of sum and update list
+    #                         sumSmallPrice -= listOfSmallBarrels[index].price
+    #                         listOfSmallBarrels[index] = barrel
+    #                         sumSmallPrice += barrel.price
 
-                    else: 
-                        listOfSmallBarrels[index] = barrel
-                        sumSmallPrice += barrel.price
+    #                 else: 
+    #                     listOfSmallBarrels[index] = barrel
+    #                     sumSmallPrice += barrel.price
 
-                    break
+    #                 break
 
+
+    # with db.engine.begin() as connection:
+
+    #     ### VARIABLES ###
+
+    #     # Find the amount of gold in inventory
+    #     goldInHand = connection.execute(
+    #         sqlalchemy.text(
+    #             "SELECT gold FROM total_inventory_view"
+    #         )
+    #     ).scalar_one()
+        
+    #     # Place to hard code gold for testing
+    #     # goldInHand = 10000
+
+    #     #List of barrels to return back
+    #     plan = []
+
+    #     # Make a list of color ids by emptiness of inventory 
+    #     barrelsByNeed = connection.execute(
+    #         sqlalchemy.text(
+    #             "SELECT barrel_id FROM ml_inventory_view ORDER BY quantity, barrel_id DESC"
+    #         )
+    #     ).scalars()
+
+
+    #     ### WE BALL, THIS IS THE BALLING PLAN ###
+
+    #     # If all small barrels cannot be bought
+    #         # PHASE 1
+    #     if (sumSmallPrice > goldInHand):
+    #         # Variable of how much gold spent so far
+    #         goldNeeded = 0
+
+            
+            
+    #         # Loop through barrel ids
+    #         for id in barrelsByNeed:
+
+    #             # If there is enough gold, append and update goldNeeded
+    #             if((id - 1) in listOfSmallBarrels.keys() and 
+    #                     goldInHand >= goldNeeded + listOfSmallBarrels[id - 1].price):
+                    
+    #                 plan.append(
+    #                     {
+    #                         "sku": listOfSmallBarrels[id - 1].sku,
+    #                         "quantity": 1
+    #                     }
+    #                 )
+    #                 goldNeeded += listOfSmallBarrels[id - 1].price     
+
+    #     # If you have more than enough money for the small barrels
+    #         # PHASE 2
+    #     else:
+    #         # Query for mlCapacity
+    #         mlCapacity = connection.execute(
+    #             sqlalchemy.text(
+    #                 "SELECT ml_capacity FROM global_inventory"
+    #             )
+    #         ).scalar_one()
+
+    #         # Checks for plan length
+    #         emptyPlan = True
+
+    #         quantitiesOfLarge = [0, 0, 0, 0]
+
+    #         # If there are large
+    #         if listOfLargeBarrels:
+                
+    #             # Make a list of color ids by emptiness of inventory 
+    #             barrel_ids = [4, 3, 2, 1]                
+
+    #             divisor = 4
+
+    #             boughtSomething = True
+            
+    #             while boughtSomething:
+    #                 boughtSomething = False
+    
+    #                 # Loop through barrel ids
+    #                 for id in barrel_ids:
+    #                     # If there is enough gold, append and update goldInHand
+    #                     if((id - 1) in listOfLargeBarrels.keys() and 
+    #                             goldInHand >= listOfLargeBarrels[id - 1].price):
+
+    #                         quantitiesOfLarge[id - 1] += 1
+    #                         goldInHand -= listOfLargeBarrels[id - 1].price 
+    #                         boughtSomething = True 
+    #                         emptyPlan = False
+                          
+
+
+    #             for id in barrel_ids:
+    #                 if quantitiesOfLarge[id - 1] > 0:
+    #                     plan.append(
+    #                         {
+    #                             "sku": listOfLargeBarrels[id - 1].sku,
+    #                             "quantity": quantitiesOfLarge[id - 1]
+    #                         }
+    #                     )
+    #                     divisor -= 1
+
+
+            
+
+
+    #         # If there are dark that we haven't bought (highly unlikely)
+    #         if hasDark:
+    #             # Find best barrel and get current amount of ml
+    #             barrel_to_purchase = best_barrel(wholesale_catalog, goldInHand, [0, 0, 0, 1])
+    #             total_ml = connection.execute(
+    #                 sqlalchemy.text(
+    #                     "SELECT total_ml FROM total_inventory_view"
+    #                 )
+    #             ).scalar_one()
+
+    #             if barrel_to_purchase is not None:
+    #                 maxToBuy = min(
+    #                     int((mlCapacity - total_ml) / barrel_to_purchase.ml_per_barrel),
+    #                     int(goldInHand / barrel_to_purchase.price),
+    #                     barrel_to_purchase.quantity
+    #                 )
+
+    #                 if(maxToBuy > 0):
+    #                     plan.append(
+    #                         {
+    #                             "sku": barrel_to_purchase,
+    #                             "quantity": maxToBuy
+    #                         }
+    #                     )
+    #                     emptyPlan = False
+    #                     goldInHand -= maxToBuy * barrel_to_purchase.price
+           
+    #         # Niche handling:
+    #             # If we didn't buy at least one barrel at this point 
+    #                 # Despite seeing large and/or dark barrels in stock:
+    #             # Set the divisor of gold back to 3
+    #         if divisor > 3:
+    #             divisor = 3
+
+    #         # For each color
+    #         for i in range(0,3):
+    #             if quantitiesOfLarge[i] == 0:
+    #                 # Query necessary attributes of color 
+    #                 colorStats = connection.execute(
+    #                     sqlalchemy.text("SELECT id, quantity_threshold, percentage_threshold FROM ml_inventory WHERE id = :barrel_id"),
+    #                     [{
+    #                         "barrel_id": (i + 1)
+    #                     }]
+    #                 ).one()
+    #                 colorMl = connection.execute(
+    #                     sqlalchemy.text("SELECT quantity FROM ml_inventory_view WHERE barrel_id = :barrel_id"),
+    #                     [{
+    #                         "barrel_id": (i + 1)
+    #                     }]
+    #                 ).scalar_one()
+
+    #                 # Finds barrel type based on i index
+    #                 potion_type_wanted = [int(j == i) for j in range(4)]
+
+    #                 # Find best type of barrel to purchase for that color
+    #                 barrel_to_purchase = best_barrel(wholesale_catalog, 
+    #                                                 int(goldInHand / divisor), 
+    #                                                 potion_type_wanted)
+                    
+    #                 # If there is a barrel to purchase (should always happen)
+    #                 if(barrel_to_purchase is not None):
+
+    #                     # Use weird algorithm to find how many barrels to buy
+    #                     if emptyPlan:
+    #                         quantityWanted = quant_should_buy(barrel_to_purchase, int(goldInHand / divisor), mlCapacity, colorStats, colorMl)
+    #                     else:
+    #                         availableSpace = mlCapacity - total_ml
+
+    #                         quantityWanted = min(
+    #                             int((goldInHand / divisor) / b.price),
+    #                             int(availableSpace * (colorStats.percentage_threshold / 100) / barrel_to_purchase.ml_per_barrel),
+    #                             barrel_to_purchase.quantity
+    #                         )
+                        
+    #                     # Don't add if one constraint prohibits us from buying
+    #                     if(quantityWanted > 0):
+
+    #                         # append 
+    #                         plan.append(
+    #                             {
+    #                                 "sku": barrel_to_purchase.sku,
+    #                                 "quantity": quantityWanted
+    #                             }
+    #                         )
+                    
+    # return plan
 
     with db.engine.begin() as connection:
+        # Boolean variables (there should always be small?)
+        mediumPresent = False
+        largePresent = False
+        sumSmallPrice = 0
 
-        ### VARIABLES ###
+        # Query gold and necessary details for each color
+        goldInHand = connection.execute(sqlalchemy.text(
+            "SELECT gold FROM total_inventory_view"
+        )).scalar_one()
+        colorStatsList = connection.execute(sqlalchemy.text(
+            """
+            SELECT
+                id, 
+                barrels.color,
+                barrel_quantities.quantity,
+                barrels.reg_threshold,
+                barrels.large_threshold
+            FROM ml_inventory AS barrels
+            JOIN ml_inventory_view AS barrel_quantities
+            ON barrels.id = barrel_quantities.barrel_id
+            ORDER BY barrel_quantities.quantity, barrels.id DESC
+            """
+        )).fetchall()
 
-        # Find the amount of gold in inventory
-        goldInHand = connection.execute(
-            sqlalchemy.text(
-                "SELECT gold FROM total_inventory_view"
-            )
-        ).scalar_one()
+        # organizedCatalog = {
+        #     "red": [],
+        #     "green":[],
+        #     "blue": [],
+        #     "dark": []
+        # }
+
+        organizedCatalog = {
+            "small": {},
+            "medium": {},
+            "large": {}
+        }
+
+        # Find any small, medium, large
+        for b in wholesale_catalog:
+            color = ""
+            size = ""
+            match b.potion_type:
+                case [1, 0, 0, 0]:
+                    color = "red"
+                case [0, 1, 0, 0]:
+                    color = "green"
+                case [0, 0, 1, 0]:
+                    color = "blue"
+                case [0, 0, 0, 1]:
+                    color = "dark"
+                case _:
+                    print("bro HUH?")
+                    continue
+            
+            if "SMALL" in b.sku:
+                if b.potion_type == [0, 0, 0, 1]:
+                    continue
+                sumSmallPrice += b.price
+                size = "small"
+            elif "MEDIUM" in b.sku:
+                size = "medium"
+                mediumPresent = True
+            elif "LARGE" in b.sku:
+                size = "large"
+                largePresent = True
+            else:
+                continue
+
+            organizedCatalog[size][color] = b
+
+    ### VARIABLES ###
         
         # Place to hard code gold for testing
         # goldInHand = 10000
@@ -241,226 +495,110 @@ def get_wholesale_purchase_plan(wholesale_catalog: list[Barrel]):
             # Variable of how much gold spent so far
             goldNeeded = 0
 
-            # Make a list of color ids by emptiness of inventory 
-            smallBarrelsByNeed = connection.execute(
-                sqlalchemy.text(
-                    "SELECT barrel_id FROM ml_inventory_view ORDER BY quantity, barrel_id DESC"
-                )
-            ).scalars()
             
             # Loop through barrel ids
-            for id in smallBarrelsByNeed:
+            for colorStats in colorStatsList:
+                color = colorStats[1]
 
                 # If there is enough gold, append and update goldNeeded
-                if((id - 1) in listOfSmallBarrels.keys() and 
-                        goldInHand >= goldNeeded + listOfSmallBarrels[id - 1].price):
+                if(color in organizedCatalog["small"].keys() and 
+                        goldInHand >= goldNeeded + organizedCatalog["small"][color].price):
                     
                     plan.append(
                         {
-                            "sku": listOfSmallBarrels[id - 1].sku,
+                            "sku": organizedCatalog["small"][color].sku,
                             "quantity": 1
                         }
                     )
-                    goldNeeded += listOfSmallBarrels[id - 1].price     
+                    goldNeeded += organizedCatalog["small"][color].price     
 
         # If you have more than enough money for the small barrels
             # PHASE 2
         else:
-            # Query for mlCapacity
-            mlCapacity = connection.execute(
-                sqlalchemy.text(
-                    "SELECT ml_capacity FROM global_inventory"
-                )
-            ).scalar_one()
 
-            # Checks for plan length
-            emptyPlan = True
+            largeQuantities = {
+                "red": 0,
+                "green": 0,
+                "blue": 0,
+                "dark": 0
+            }
 
-            quantitiesOfLarge = [0, 0, 0, 0]
+            if largePresent:
+                largeBarrels = organizedCatalog["large"]
+                stillBuying = True
 
-            # If there are large
-            if listOfLargeBarrels:
-                
-                # Make a list of color ids by emptiness of inventory 
-                barrel_ids = [4, 3, 2, 1]                
+                while stillBuying:
+                    stillBuying = False
 
-                divisor = 4
+                    for colorStats in colorStatsList:
+                        color = colorStats[1]
 
-                boughtSomething = True
+                        if(color in largeBarrels.keys() and 
+                            goldInHand >= largeBarrels[color].price and
+                            colorStats.quantity + largeBarrels[color].ml_per_barrel <= colorStats.large_threshold):
+
+                            goldInHand -= largeBarrels[color].price
+                            largeQuantities[color] += 1
+                            stillBuying = True
             
-                while boughtSomething:
-                    boughtSomething = False
-    
-                    # Loop through barrel ids
-                    for id in barrel_ids:
-                        # If there is enough gold, append and update goldInHand
-                        if((id - 1) in listOfLargeBarrels.keys() and 
-                                goldInHand >= listOfLargeBarrels[id - 1].price):
+            for colorStats in colorStatsList:
+                color = colorStats[1]
+                if color == "dark":
+                    continue
 
-                            quantitiesOfLarge[id - 1] += 1
-                            goldInHand -= listOfLargeBarrels[id - 1].price 
-                            boughtSomething = True 
-                            emptyPlan = False
-                          
-
-
-                for id in barrel_ids:
-                    if quantitiesOfLarge[id - 1] > 0:
-                        plan.append(
-                            {
-                                "sku": listOfLargeBarrels[id - 1].sku,
-                                "quantity": quantitiesOfLarge[id - 1]
-                            }
-                        )
-                        divisor -= 1
-
-
-            
-
-
-            # If there are dark that we haven't bought (highly unlikely)
-            if hasDark:
-                # Find best barrel and get current amount of ml
-                barrel_to_purchase = best_barrel(wholesale_catalog, goldInHand, [0, 0, 0, 1])
-                total_ml = connection.execute(
-                    sqlalchemy.text(
-                        "SELECT total_ml FROM total_inventory_view"
+                if largeQuantities[color] > 0:
+                    plan.append(
+                        {
+                            "sku": organizedCatalog["large"][color].sku,
+                            "quantity": largeQuantities[color]
+                        }
                     )
-                ).scalar_one()
+                else:
+                    if mediumPresent:
+                        mediumBarrel = organizedCatalog["medium"][color]
+                        if ((goldInHand // 3) >= mediumBarrel.price):
 
-                if barrel_to_purchase is not None:
-                    maxToBuy = min(
-                        int((mlCapacity - total_ml) / barrel_to_purchase.ml_per_barrel),
-                        int(goldInHand / barrel_to_purchase.price),
-                        barrel_to_purchase.quantity
-                    )
+                            if (colorStats.quantity + mediumBarrel.ml_per_barrel <= colorStats.reg_threshold):
+                                quantityToBuy = min(
+                                    mediumBarrel.quantity,
+                                    (goldInHand // 3) // mediumBarrel.price,
+                                    (colorStats.reg_threshold - colorStats.quantity) // mediumBarrel.ml_per_barrel
+                                )
 
-                    if(maxToBuy > 0):
-                        plan.append(
-                            {
-                                "sku": barrel_to_purchase,
-                                "quantity": maxToBuy
-                            }
-                        )
-                        emptyPlan = False
-                        goldInHand -= maxToBuy * barrel_to_purchase.price
-           
-            # Niche handling:
-                # If we didn't buy at least one barrel at this point 
-                    # Despite seeing large and/or dark barrels in stock:
-                # Set the divisor of gold back to 3
-            if divisor > 3:
-                divisor = 3
-
-            # For each color
-            for i in range(0,3):
-                if quantitiesOfLarge[i] == 0:
-                    # Query necessary attributes of color 
-                    colorStats = connection.execute(
-                        sqlalchemy.text("SELECT id, quantity_threshold, percentage_threshold FROM ml_inventory WHERE id = :barrel_id"),
-                        [{
-                            "barrel_id": (i + 1)
-                        }]
-                    ).one()
-                    colorMl = connection.execute(
-                        sqlalchemy.text("SELECT quantity FROM ml_inventory_view WHERE barrel_id = :barrel_id"),
-                        [{
-                            "barrel_id": (i + 1)
-                        }]
-                    ).scalar_one()
-
-                    # Finds barrel type based on i index
-                    potion_type_wanted = [int(j == i) for j in range(4)]
-
-                    # Find best type of barrel to purchase for that color
-                    barrel_to_purchase = best_barrel(wholesale_catalog, 
-                                                    int(goldInHand / divisor), 
-                                                    potion_type_wanted)
-                    
-                    # If there is a barrel to purchase (should always happen)
-                    if(barrel_to_purchase is not None):
-
-                        # Use weird algorithm to find how many barrels to buy
-                        if emptyPlan:
-                            quantityWanted = quant_should_buy(barrel_to_purchase, int(goldInHand / divisor), mlCapacity, colorStats, colorMl)
+                                if quantityToBuy > 0:
+                                    plan.append(
+                                        {
+                                            "sku": mediumBarrel.sku,
+                                            "quantity": quantityToBuy
+                                        }
+                                    )
+                            else: 
+                                print("yuh")
                         else:
-                            availableSpace = mlCapacity - total_ml
+                            if (color in organizedCatalog["small"].keys() and 
+                                (goldInHand // 3) >= organizedCatalog["small"][color].price):
 
-                            quantityWanted = min(
-                                int((goldInHand / divisor) / b.price),
-                                int(availableSpace * (colorStats.percentage_threshold / 100) / barrel_to_purchase.ml_per_barrel),
-                                barrel_to_purchase.quantity
-                            )
+                                smallBarrel = organizedCatalog["small"][color]
+                                quantityToBuy = min(
+                                    smallBarrel.quantity,
+                                    (goldInHand // 3) // smallBarrel.price,
+                                    (colorStats.reg_threshold - colorStats.quantity) // smallBarrel.ml_per_barrel
+                                )
+
+                                if quantityToBuy > 0:
+                                    plan.append(
+                                        {
+                                            "sku": smallBarrel.sku,
+                                            "quantity": quantityToBuy
+                                        }
+                                    )
+                
+        return plan
+
+                                
+
                         
-                        # Don't add if one constraint prohibits us from buying
-                        if(quantityWanted > 0):
 
-                            # append 
-                            plan.append(
-                                {
-                                    "sku": barrel_to_purchase.sku,
-                                    "quantity": quantityWanted
-                                }
-                            )
-                    
-    return plan
-
-    # with db.engine.begin() as connection:
-    #     mediumPresent = False
-    #     largePresent = False
-    #     sumSmallPrice = 0
-
-    #     goldInHand = connection.execute(sqlalchemy.text(
-    #         "SELECT gold FROM total_inventory_view"
-    #     ))
-    #     colorStatsList = connection.execute(sqlalchemy.text(
-    #         """
-    #         SELECT
-    #             id, 
-    #             barrels.color,
-    #             barrel_quantities.quantity,
-    #             barrels.reg_threshold,
-    #             barrels.large_threshold
-    #         FROM ml_inventory AS barrels
-    #         JOIN ml_inventory_view AS barrel_quantities
-    #         ON barrels.id = barrel_quantities.barrel_id
-    #         ORDER BY id
-    #         """
-    #     )).fetchall()
-
-    #     organizedCatalog = {
-    #         "red": [],
-    #         "green":[],
-    #         "blue": [],
-    #         "dark": []
-    #     }
-
-    #     # Find any small, medium, large
-    #     for b in wholesale_catalog:
-    #         color = ""
-    #         match b.potion_type:
-    #             case [1, 0, 0, 0]:
-    #                 color = "red"
-    #             case [0, 1, 0, 0]:
-    #                 color = "green"
-    #             case [0, 0, 1, 0]:
-    #                 color = "blue"
-    #             case [0, 0, 0, 1]:
-    #                 color = "dark"
-    #             case _:
-    #                 print("bro HUH?")
-    #                 return []
-            
-    #         if "SMALL" in b.sku:
-    #             sumSmallPrice += b.price
-    #         if "MEDIUM" in b.sku:
-    #             mediumPresent = True
-    #         if "LARGE" in b.sku:
-    #             largePresent = True
-
-    #         organizedCatalog[color].append(b)
-
-# continue with phase one
 
 # phase 2:
 #     if there are large:
