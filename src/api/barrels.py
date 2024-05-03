@@ -200,7 +200,8 @@ def get_wholesale_purchase_plan(wholesale_catalog: list[Barrel]):
             if "SMALL" in b.sku:
                 if b.potion_type == [0, 0, 0, 1]:
                     continue
-                sumSmallPrice += b.price
+                if sumSmallPrice < b.price:
+                    sumSmallPrice = b.price
                 size = "small"
             elif "MEDIUM" in b.sku:
                 size = "medium"
@@ -220,6 +221,7 @@ def get_wholesale_purchase_plan(wholesale_catalog: list[Barrel]):
 
         #List of barrels to return back
         plan = []
+        sumSmallPrice *= 3
 
 
         ### WE BALL, THIS IS THE BALLING PLAN ###
@@ -282,8 +284,6 @@ def get_wholesale_purchase_plan(wholesale_catalog: list[Barrel]):
             
             for colorStats in colorStatsList:
                 color = colorStats[1]
-                if color == "dark":
-                    continue
 
                 if largeQuantities[color] > 0:
                     plan.append(
@@ -293,6 +293,9 @@ def get_wholesale_purchase_plan(wholesale_catalog: list[Barrel]):
                         }
                     )
                 else:
+                    if color == "dark":
+                        continue
+                    
                     if (mediumPresent and (goldInHand // 3) >= organizedCatalog["medium"][color].price and
                         availableSpace >= organizedCatalog["medium"][color].ml_per_barrel):
 
