@@ -28,11 +28,14 @@ def get_catalog():
             FROM potion_inventory AS potions
             LEFT JOIN potion_ledger_entries AS entries 
             ON potions.id = entries.potion_id
+            WHERE quantity > 0
             GROUP BY potions.id
-            ORDER BY quantity DESC
+            ORDER BY RANDOM()
             LIMIT 6
             """
         ))
+            # GROUP BY potions.id
+            # ORDER BY quantity DESC
 
         for potion in table:
             if potion.quantity is None:

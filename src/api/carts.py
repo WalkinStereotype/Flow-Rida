@@ -82,24 +82,30 @@ def post_visits(visit_id: int, customers: list[Customer]):
     """
     Which customers visited the shop today?
     """
-    notFirst = False
+    with db.engine.begin() as connection:
+        # lastTickId = connection.execute(sqlalchemy.text("SELECT MAX(id) FROM ticks")).scalar_one()
+        # sqlCommand = ""
 
-    print(f"visit_id: {visit_id}")
-    print("[")
-    for customer in customers:
-        if notFirst:
-            print(f",\n\tLvl {customer.level} {customer.character_class}: {customer.customer_name}", end = '')
-        else:
-            print(f"\tLvl {customer.level} {customer.character_class}: {customer.customer_name}", end = '')
-            notFirst = True
-    
-    print("\n]")
+        notFirst = False
 
+        print(f"visit_id: {visit_id}")
+        print("[")
+        for customer in customers:
+            if notFirst:
+                print(f",\n\tLvl {customer.level} {customer.character_class}: {customer.customer_name}", end = '')
+            else:
+                print(f"\tLvl {customer.level} {customer.character_class}: {customer.customer_name}", end = '')
+                notFirst = True
+            
+            # sqlCommand += ("INSERT INTO visitors (character_class, level, name) VALUES (:character_class, :level, :name);\n")
         
+        print("\n]")
 
-    # print(customers)
+            
 
-    return "OK"
+        # print(customers)
+
+        return "OK"
 
 
 @router.post("/")

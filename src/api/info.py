@@ -23,17 +23,28 @@ def post_time(timestamp: Timestamp):
     Share current time.
     """
 
+    print(f"Day: {timestamp.day} Hour: {timestamp.hour}")
+
     with db.engine.begin() as connection:
         try:
-            connection.execute(
-                sqlalchemy.text(
-                    "INSERT INTO ticks (day, hour) VALUES (:day, :hour)"
-                ),
+            day, hour = connection.execute(sqlalchemy.text("""WITH last_tick AS(
+                    SELECT MAX(id) AS tick_id FROM ticks 
+                    )
+                    SELECT day, hour
+                    FROM ticks JOIN last_tick ON ticks.id = last_tick.tick_id
+                    LIMIT 1"""
+                )
+            ).fetchone()
+            if (day is not timestamp.day) and (hour != timestamp.hour):
+                connection.execute(
+                    sqlalchemy.text(
+                        "INSERT INTO ticks (day, hour) VALUES (:day, :hour)"
+                    ),
 
-                [{
-                    "day": timestamp.day,
-                    "hour": timestamp.hour
-                }]
+                    [{
+                        "day": timestamp.day,
+                        "hour": timestamp.hour
+                    }]
 
             )
         except IntegrityError as e:
