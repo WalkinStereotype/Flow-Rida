@@ -41,6 +41,8 @@ def post_deliver_barrels(barrels_delivered: list[Barrel], order_id: int):
     print("\n]")
     print(f"order_id: {order_id}")
 
+    return[]
+
 
     with db.engine.begin() as connection:
         # Integrity Error check

@@ -13,6 +13,7 @@ def get_catalog():
     """
 
     list = []
+    return list
     
     with db.engine.begin() as connection:
         
