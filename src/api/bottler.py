@@ -129,8 +129,6 @@ def get_bottle_plan():
     Go from barrel to bottle.
     """
 
-    return []
-
     with db.engine.begin() as connection:
         list = []
 

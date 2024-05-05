@@ -11,9 +11,6 @@ def get_catalog():
     """
     Each unique item combination must have only a single price.
     """
-
-    list = []
-    return list
     
     with db.engine.begin() as connection:
         
@@ -23,14 +20,14 @@ def get_catalog():
                 potions.id AS id, 
                 sku,
                 name, 
-                COALESCE(SUM(entries.quantity), 0) AS quantity,
+                COALESCE(SUM(entries.quantity), 0) AS sum_quantity,
                 price, 
                 potion_type
             FROM potion_inventory AS potions
             LEFT JOIN potion_ledger_entries AS entries 
             ON potions.id = entries.potion_id
-            WHERE quantity > 0
             GROUP BY potions.id
+            HAVING COALESCE(SUM(entries.quantity), 0) > 0
             ORDER BY RANDOM()
             LIMIT 6
             """
@@ -39,14 +36,14 @@ def get_catalog():
             # ORDER BY quantity DESC
 
         for potion in table:
-            if potion.quantity is None:
+            if potion.sum_quantity is None:
                 continue
-            if potion.quantity > 0:
+            if potion.sum_quantity > 0:
                 list.append(
                     {
                         "sku": potion.sku,
                         "name": potion.name,
-                        "quantity": potion.quantity,
+                        "quantity": potion.sum_quantity,
                         "price": potion.price,
                         "potion_type": potion.potion_type
                     }

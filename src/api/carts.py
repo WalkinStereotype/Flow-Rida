@@ -8,6 +8,11 @@ from enum import Enum
 
 from sqlalchemy.exc import IntegrityError
 
+# metadata_obj = sqlalchemy.MetaData()
+# carts = sqlalchemy.Table("carts", metadata_obj, autoload_with=db.engine)
+# cart_items = sqlalchemy.Table("cart_items", metadata_obj, autoload_with=db.engine)
+# potion_inventory = sqlalchemy.Table("potion_inventory", metadata_obj, autoload_with=db.engine)
+
 router = APIRouter(
     prefix="/carts",
     tags=["cart"],
@@ -56,6 +61,14 @@ def search_orders(
     Your results must be paginated, the max results you can return at any
     time is 5 total line items.
     """
+    # results = (
+    #     sqlalchemy.select(
+    #         db.
+    #     )
+    # )
+
+    # if customer_name != "":
+
 
     return {
         "previous": "",
