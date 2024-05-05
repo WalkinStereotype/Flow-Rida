@@ -11,6 +11,8 @@ def get_catalog():
     """
     Each unique item combination must have only a single price.
     """
+
+    list = []
     
     with db.engine.begin() as connection:
         
