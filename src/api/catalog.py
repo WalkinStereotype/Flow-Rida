@@ -27,7 +27,7 @@ def get_catalog():
             ON max_id.last_id = ticks.id
             LIMIT 1
             """ 
-        ))
+        )).scalar_one()
         print(f"day: {day}")
         
         table = connection.execute(
@@ -90,7 +90,7 @@ def get_catalog():
                 """
             ),
             [{
-                "day": 'Hearthday'
+                "day": day
             }]
         )
             # GROUP BY potions.id

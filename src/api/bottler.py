@@ -159,7 +159,7 @@ def get_bottle_plan():
                 """
                 SELECT potion_id, potion_type, quantity
                 FROM potion_inventory_view
-                WHERE NOT blacklisted AND quantity < :softLimit
+                WHERE NOT blacklisted
                 ORDER BY quantity 
                 """
             ),
@@ -179,6 +179,24 @@ def get_bottle_plan():
                 }
             )
 
+            # if quantity = 0 and makable
+            #     take away from ml_inventory
+            #     quantity += 1
+            #     numMade += 1
+
+        
+        # query priority potions
+
+        # while madeOne
+        #     madeOne = false
+        #     for id in priority_potions
+        #         if i can make one: 
+        #             take away from ml Inventory
+        #             quantity += 1
+        #             numMade += 1
+        #             madeOne = true
+
+
         
         # Place to hardcode inventory
         # mlInventory = [300, 250, 800, 0]
@@ -193,6 +211,12 @@ def get_bottle_plan():
             """
         )).first()
 
+        # for p in potionsToMakeAsList:
+        #     if p.quantity < min:
+        #         min = p.quantity
+        #     elif p.quantity > max:
+        #         max = p.quantity
+
         # While the quantTracker has not reached the max quantity
         while quantTracker <= maxQuant and numPotMade < maxToMake:
             # For each potion
@@ -200,7 +224,8 @@ def get_bottle_plan():
                 potion_type = p["potion_type"]
 
                 # If we have enough ml to make one potion
-                if (mlInventory[0] >= potion_type[0] and
+                if (p["quantity"] == quantTracker and
+                    mlInventory[0] >= potion_type[0] and
                     mlInventory[1] >= potion_type[1] and
                     mlInventory[2] >= potion_type[2] and
                     mlInventory[3] >= potion_type[3] and 
