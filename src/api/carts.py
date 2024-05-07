@@ -71,7 +71,8 @@ def search_orders(
         offset = len(search_page) * 5
 
         if offset != 0:
-            prev = search_page.substring(0, len(search_page) - 1)
+            # prev = search_page.substring(0, len(search_page) - 1)
+            prev = search_page[:-1]
 
         count = connection.execute(sqlalchemy.text(
             """
