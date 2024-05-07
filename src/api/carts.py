@@ -35,7 +35,7 @@ class search_sort_order(str, Enum):
 def search_orders(
     customer_name: str = "",
     potion_sku: str = "",
-    search_page: str = "",
+    search_page: str = "0",
     sort_col: search_sort_options = search_sort_options.timestamp,
     sort_order: search_sort_order = search_sort_order.desc,
 ):
@@ -68,7 +68,10 @@ def search_orders(
         prev = ""
         next = ""
 
-        offset = len(search_page) * 5
+        if search_page == "":
+            search_page = "0"
+
+        offset = (len(search_page) - 1) * 5
 
         if offset != 0:
             # prev = search_page.substring(0, len(search_page) - 1)
@@ -82,7 +85,7 @@ def search_orders(
         )).scalar_one()
 
         if count > offset + 5:
-            next = next + "."
+            next = search_page + "."
         
 
         if sort_col is search_sort_options.customer_name:
