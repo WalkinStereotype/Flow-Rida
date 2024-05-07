@@ -33,7 +33,7 @@ def post_deliver_barrels(barrels_delivered: list[Barrel], order_id: int):
     print("[")
     for b in barrels_delivered:
         if notFirst:
-            print(f",\n\t{b.sku}:\n\t\tml: {b.ml_per_barrel}, price: {b.price},potion_type: {b.potion_type}, quantity: {b.quantity}", end = '')
+            print(f",\n\t{b.sku}:\n\t\tml: {b.ml_per_barrel}, price: {b.price}, potion_type: {b.potion_type}, quantity: {b.quantity}", end = '')
         else:
             print(f"\t{b.sku}:\n\t\tml: {b.ml_per_barrel}, price: {b.price}, potion_type: {b.potion_type}, quantity: {b.quantity}", end = '')
             notFirst = True
@@ -231,6 +231,23 @@ def get_wholesale_purchase_plan(wholesale_catalog: list[Barrel]):
         if (sumSmallPrice > goldInHand):
             # Variable of how much gold spent so far
             goldNeeded = 0
+
+            # if mediumPresent:
+            #     for colorStats in colorStatsList:
+            #         color = colorStats[1]
+            #         if(color in organizedCatalog["medium"].keys() and 
+            #                 goldInHand >= goldNeeded + organizedCatalog["medium"][color].price and
+            #                 availableSpace >= organizedCatalog["medium"][color].ml_per_barrel):
+                    
+            #             plan.append(
+            #                 {
+            #                     "sku": organizedCatalog["medium"][color].sku,
+            #                     "quantity": 1
+            #                 }
+            #             )
+            #             goldNeeded += organizedCatalog["medium"][color].price 
+            #             availableSpace -= organizedCatalog["medium"][color].ml_per_barrel
+
 
             
             # Loop through barrel ids

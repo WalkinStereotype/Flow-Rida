@@ -8,10 +8,12 @@ from enum import Enum
 
 from sqlalchemy.exc import IntegrityError
 
-# metadata_obj = sqlalchemy.MetaData()
+metadata_obj = sqlalchemy.MetaData()
+metadata_obj.reflect(bind=db.engine, views=True)
 # carts = sqlalchemy.Table("carts", metadata_obj, autoload_with=db.engine)
 # cart_items = sqlalchemy.Table("cart_items", metadata_obj, autoload_with=db.engine)
 # potion_inventory = sqlalchemy.Table("potion_inventory", metadata_obj, autoload_with=db.engine)
+search_orders_view = sqlalchemy.Table("search_orders_view", metadata_obj, autoload_with=db.engine)
 
 router = APIRouter(
     prefix="/carts",
@@ -61,27 +63,75 @@ def search_orders(
     Your results must be paginated, the max results you can return at any
     time is 5 total line items.
     """
-    # results = (
-    #     sqlalchemy.select(
-    #         db.
-    #     )
-    # )
 
-    # if customer_name != "":
+    with db.engine.connect() as connection:
+        prev = ""
+        next = ""
+
+        offset = len(search_page) * 5
+
+        if offset != 0:
+            prev = search_page.substring(0, len(search_page) - 1)
+
+        count = connection.execute(sqlalchemy.text(
+            """
+            SELECT COUNT(*) AS count
+            FROM search_orders_view
+            """
+        )).scalar_one()
+
+        if count > offset + 5:
+            next = next + "."
+        
+
+        if sort_col is search_sort_options.customer_name:
+            order_by = search_orders_view.c.customer_name
+        elif sort_col is search_sort_options.item_sku:
+            order_by = search_orders_view.c.sku
+        elif sort_col is search_sort_options.line_item_total:
+            order_by = search_orders_view.c.line_item_total
+        elif sort_col is search_sort_options.timestamp:
+            order_by = search_orders_view.c.created_at
+        else: 
+            assert False
+        
+        if sort_order is search_sort_order.desc:
+            order_by = sqlalchemy.desc(order_by)
+
+        sql = (
+            sqlalchemy.select(
+                search_orders_view
+            )
+            .order_by(order_by)
+            .limit(5)
+            .offset(offset)
+        )
+
+        if customer_name != "":
+            sql = sql.where(search_orders_view.c.customer_name.ilike(f"%{customer_name}%"))
+
+        if potion_sku != "":
+            sql = sql.where(search_orders_view.c.sku.ilike(f"%{potion_sku}%"))
+
+        results = connection.execute(sql)
+        json = []
+
+        for row in results:
+            json.append(
+                {
+                    "line_item_id": row.line_item_id,
+                    "item_sku": f"{row.quantity} {row.sku}",
+                    "customer_name": row.customer_name,
+                    "line_item_total": row.line_item_total,
+                    "timestamp": row.created_at
+                }
+            )
 
 
     return {
-        "previous": "",
-        "next": "",
-        "results": [
-            {
-                "line_item_id": 1,
-                "item_sku": "1 oblivion potion",
-                "customer_name": "Scaramouche",
-                "line_item_total": 50,
-                "timestamp": "2021-01-01T00:00:00Z",
-            }
-        ],
+        "previous": prev,
+        "next": next,
+        "results": json
     }
 
 
