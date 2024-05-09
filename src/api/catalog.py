@@ -15,45 +15,51 @@ def get_catalog():
     list = []
     
     with db.engine.begin() as connection:
-        day = connection.execute(sqlalchemy.text(
+        day, hour = connection.execute(sqlalchemy.text(
             """
             WITH max_id AS(
             SELECT MAX(id) AS last_id
             FROM ticks
             )
-            SELECT day
+            SELECT day, hour
             FROM max_id 
             JOIN ticks
             ON max_id.last_id = ticks.id
             LIMIT 1
             """ 
-        )).scalar_one()
-        print(f"day: {day}")
+        )).fetchone()
+        print(f"day: {day}, hour: {hour}")
         
         table = connection.execute(
             sqlalchemy.text(
                 """
                 select 
-                subquery3.potion_id,
-                sum_purchases_on_day, 
-                sum_purchases_general,
-                rn,
-                sku,
-                name,
-                price,
-                potion_type,
-                quantity
+                    subquery3.potion_id,
+                    sum_purchases_on_hour,
+                    sum_purchases_on_day, 
+                    sum_purchases_general,
+                    rn,
+                    sku,
+                    name,
+                    price,
+                    potion_type,
+                    quantity
 
                 from
                 (select *,
                     row_number() over (
                         order by 
+                        sum_purchases_on_hour desc,
                         sum_purchases_on_day desc,
                         sum_purchases_general desc
                     ) as rn
                 from
                     (select 
                     subquery.potion_id, 
+                    coalesce(sum(case
+                        when ticks.day = :day and ticks.hour = :hour and quantity < 0 then quantity * -1
+                        else 0 end
+                        ), 0) as sum_purchases_on_hour,
                     coalesce(sum(case 
                         when ticks.day = :day and quantity < 0 then quantity * -1
                         else 0 end
@@ -61,11 +67,11 @@ def get_catalog():
                     coalesce(sum(case
                         when quantity < 0 then quantity * -1
                         else 0 end
-                    ), 0) as sum_purchases_general
+                        ), 0) as sum_purchases_general
                     from 
-                    (select potion_id
-                    from potion_inventory_view
-                    where quantity > 0) as subquery
+                        (select potion_id
+                        from potion_inventory_view
+                        where quantity > 0) as subquery
 
                     join potion_ledger_entries as entries
                     on subquery.potion_id = entries.potion_id
@@ -77,6 +83,7 @@ def get_catalog():
                     case 
                     when sum_purchases_general > 0 then 1
                     else 1 + random() end,
+                    sum_purchases_on_hour desc,
                     sum_purchases_on_day desc,
                     sum_purchases_general desc
                 ) as subquery3
@@ -90,7 +97,8 @@ def get_catalog():
                 """
             ),
             [{
-                "day": day
+                "day": day,
+                "hour": hour
             }]
         )
             # GROUP BY potions.id
@@ -122,5 +130,6 @@ def get_catalog():
     
     print("\n]")
     return list
+
 
 

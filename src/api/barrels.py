@@ -346,7 +346,7 @@ def get_wholesale_purchase_plan(wholesale_catalog: list[Barrel]):
                             quantityToBuy = min(
                                 smallBarrel.quantity,
                                 (goldInHand // 3) // smallBarrel.price,
-                                (colorStats.reg_threshold // 3 - colorStats.quantity) // smallBarrel.ml_per_barrel,
+                                (colorStats.reg_threshold // 2 - colorStats.quantity) // smallBarrel.ml_per_barrel,
                                 availableSpace // smallBarrel.ml_per_barrel,
 
                             )

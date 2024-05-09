@@ -55,9 +55,37 @@ def get_capacity_plan():
         )).one()
         resultFromView = connection.execute(
             sqlalchemy.text(
-                "SELECT * FROM total_inventory_view"
+                "SELECT gold, total_ml, total_potions FROM total_inventory_view"
             )
         ).one()
+
+        manualPlan = connection.execute(
+            sqlalchemy.text(
+                """
+                SELECT ml_cap_to_buy, pot_cap_to_buy, gold_required FROM capacity_plan
+                """
+            )
+        ).one()
+
+        if((manualPlan.ml_cap_to_buy > 0 or manualPlan.pot_cap_to_buy > 0) and 
+                resultFromView.gold > manualPlan.gold_required + ((manualPlan.ml_cap_to_buy + manualPlan.pot_cap_to_buy) * 1000)):
+            
+            ml_capacity_manual = manualPlan.ml_cap_to_buy
+            potion_capacity_manual = manualPlan.pot_cap_to_buy
+
+            connection.execute(
+                sqlalchemy.text(
+                    """
+                    UPDATE capacity_plan 
+                    SET ml_cap_to_buy = 0, pot_cap_to_buy = 0
+                    """
+                )
+            )
+            
+            return {
+                "potion_capacity": potion_capacity_manual,
+                "ml_capacity": ml_capacity_manual
+            }
 
         goldThresholdPot = x.pot_cap_have * x.gold_threshold_per_unit
         goldThresholdMl = x.ml_cap_have * x.gold_threshold_per_unit
@@ -129,7 +157,7 @@ def deliver_capacity_plan(capacity_purchase : CapacityPurchase, order_id: int):
             }]
         )
     
-        connection.execute(
+        ml_cap_have = connection.execute(
             sqlalchemy.text(
                 """
                 UPDATE global_inventory 
@@ -137,13 +165,15 @@ def deliver_capacity_plan(capacity_purchase : CapacityPurchase, order_id: int):
                 pot_cap_have = pot_cap_have + :potion_capacity,
                 ml_capacity = ml_capacity + :ml_capacity * 10000,
                 ml_cap_have = ml_cap_have + :ml_capacity
+                RETURNING ml_cap_have
                 """
             ),
             [{
                 "potion_capacity": capacity_purchase.potion_capacity,
                 "ml_capacity": capacity_purchase.ml_capacity
             }]
-        )
+        ).scalar_one()
+        print(f"ml_cap_have afteer change: {ml_cap_have}")
 
         # Updating thresholds
         ml_capacity = connection.execute(
@@ -210,12 +240,13 @@ def deliver_capacity_plan(capacity_purchase : CapacityPurchase, order_id: int):
                 sqlalchemy.text(
                     """
                     UPDATE ml_inventory 
-                    SET reg_threshold = reg_threshold + 1250 * ml_cap,
-                    large_threshold = large_threshold + 2500 * ml_cap
+                    SET reg_threshold = 5000 + 1250 * (:ml_cap -4),
+                    large_threshold = 15000 + 2500 * (:ml_cap - 4)
                     """
                 ), 
                 [{
-                    "ml_units_bought": capacity_purchase.ml_capacity
+                    "ml_cap": ml_cap_have
                 }]
             )
+    print(f"")
     return "OK"
