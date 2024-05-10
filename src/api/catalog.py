@@ -91,8 +91,8 @@ def get_catalog():
                 on potions.potion_id = subquery3.potion_id
                 order by 
                 case
-                    when rn <= 4 then rn
-                    else 4 + random() end
+                    when rn <= 5 then rn
+                    else 5 + random() end
                 limit 6
                 """
             ),
