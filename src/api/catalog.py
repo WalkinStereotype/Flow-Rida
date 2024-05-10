@@ -81,17 +81,16 @@ def get_catalog():
                     ) as subquery2
                 order by 
                     case 
-                    when sum_purchases_general > 0 then 1
+                    when sum_purchases_on_day > 0 then 1
                     else 1 + random() end,
                     sum_purchases_on_hour desc,
-                    sum_purchases_on_day desc,
-                    sum_purchases_general desc
+                    sum_purchases_on_day desc
                 ) as subquery3
                 join potion_inventory_view as potions 
                 on potions.potion_id = subquery3.potion_id
                 order by 
                 case
-                    when rn <= 5 then rn
+                    when rn <= 4 then rn
                     else 5 + random() end
                 limit 6
                 """
