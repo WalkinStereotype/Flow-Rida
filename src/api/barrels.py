@@ -296,7 +296,7 @@ def get_wholesale_purchase_plan(wholesale_catalog: list[Barrel]):
 
                             goldInHand -= largeBarrels[color].price
                             largeQuantities[color] += 1
-                            availableSpace -= largeBarrels[color.ml_per_barrel]
+                            availableSpace -= largeBarrels[color].ml_per_barrel
                             stillBuying = True
             
             for colorStats in colorStatsList:
