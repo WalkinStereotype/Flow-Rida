@@ -291,7 +291,8 @@ def get_wholesale_purchase_plan(wholesale_catalog: list[Barrel]):
 
                         if(color in largeBarrels.keys() and 
                             goldInHand >= largeBarrels[color].price and
-                            colorStats.quantity + largeBarrels[color].ml_per_barrel <= colorStats.large_threshold and
+                            colorStats.quantity + 
+                                (largeBarrels[color].ml_per_barrel * (largeQuantities[color] + 1)) <= colorStats.large_threshold and
                             availableSpace >= largeBarrels[color].ml_per_barrel):
 
                             goldInHand -= largeBarrels[color].price
