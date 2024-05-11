@@ -133,8 +133,8 @@ def get_bottle_plan():
         list = []
 
         # Get the maxPotions I can make
-        soft_limit_per_capacity = 17
-        hard_limit_per_capacity = 25
+        soft_limit_per_capacity = 10
+        hard_limit_per_capacity = 9
 
         pot_capacity = connection.execute(sqlalchemy.text("SELECT pot_capacity FROM global_inventory")).scalar_one()
         maxToMake = (pot_capacity
