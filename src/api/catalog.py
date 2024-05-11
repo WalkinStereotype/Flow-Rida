@@ -49,6 +49,12 @@ def get_catalog():
             """ 
         )).fetchone()
         print(f"day: {day}, hour: {hour}")
+
+        # Is it night for the rogues? (Hours 0-6)
+        isNight = False
+        if (hour >= 0) and (hour <= 6):
+            isNight = True
+        
         
         table = connection.execute(
             sqlalchemy.text(
@@ -106,7 +112,6 @@ def get_catalog():
                 case
                     when rn <= 5 then rn
                     else 6 + random() end
-                limit 12
                 """
             ),
             [{
@@ -118,12 +123,18 @@ def get_catalog():
             # ORDER BY quantity DESC
 
         counter = 0
+        darkFound = False
+        darkInCatalog = False
+        darkPotion = None
 
         for potion in table:
             numMade = 0
             if potion.sku in addedQuantities.keys():
                 numMade = addedQuantities[potion.sku]
-            if potion.quantity + numMade > 0:
+            
+
+            if potion.quantity + numMade > 0 and counter < 5:
+
                 list.append(
                     {
                         "sku": potion.sku,
@@ -134,9 +145,24 @@ def get_catalog():
                     }
                 )
 
+
+                counter += 1  
+
+            if potion.potion_type == [0, 0, 0, 100] and potion.quantity + numMade > 0:
+                list.append(
+                    {
+                        "sku": potion.sku,
+                        "name": potion.name,
+                        "quantity": potion.quantity + numMade,
+                        "price": potion.price,
+                        "potion_type": potion.potion_type
+                    }
+                )
                 counter += 1
-                if counter >= 6:
-                    break
+                darkFound = True      
+
+            if counter >= 6:
+                break
 
     # print(list)
 
