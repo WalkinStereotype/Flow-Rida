@@ -52,80 +52,93 @@ def get_catalog():
 
         # Is it night for the rogues? (Hours 0-6)
         isNight = False
-        if (hour >= 0) and (hour <= 6):
-            isNight = True
+        # if (hour >= 0) and (hour <= 6):
+        #     isNight = True
         
         
+        # table = connection.execute(
+        #     sqlalchemy.text(
+        #         """
+        #         select 
+        #             subquery3.potion_id,
+        #             sum_purchases_on_hour,
+        #             sum_purchases_on_day, 
+        #             sum_purchases_general,
+        #             rn,
+        #             sku,
+        #             name,
+        #             price,
+        #             potion_type,
+        #             quantity
+
+        #         from
+        #         (select *,
+        #             row_number() over (
+        #                 order by 
+        #                 sum_purchases_on_hour desc,
+        #                 sum_purchases_on_day desc,
+        #                 sum_purchases_general desc
+        #             ) as rn
+        #         from
+        #             (select 
+        #             entries.potion_id, 
+        #             coalesce(sum(case
+        #                 when ticks.day = :day and ticks.hour = :hour and quantity < 0 then quantity * -1
+        #                 else 0 end
+        #                 ), 0) as sum_purchases_on_hour,
+        #             coalesce(sum(case 
+        #                 when ticks.day = :day and quantity < 0 then quantity * -1
+        #                 else 0 end
+        #                 ), 0) as sum_purchases_on_day,
+        #             coalesce(sum(case
+        #                 when quantity < 0 then quantity * -1
+        #                 else 0 end
+        #                 ), 0) as sum_purchases_general
+        #             from potion_ledger_entries as entries
+        #             left join ticks
+        #             on entries.tick_id = ticks.id
+        #             group by entries.potion_id
+        #             ) as subquery2
+        #         order by 
+        #             case 
+        #             when sum_purchases_on_day > 0 then 1
+        #             else 1 + random() end,
+        #             sum_purchases_on_hour desc,
+        #             sum_purchases_on_day desc
+        #         ) as subquery3
+        #         join potion_inventory_view as potions 
+        #         on potions.potion_id = subquery3.potion_id
+        #         order by 
+        #         case
+        #             when rn <= 5 then rn
+        #             else 6 + random() end
+        #         """
+        #     ),
+        #     [{
+        #         "day": day,
+        #         "hour": hour
+        #     }]
+        # )
+            # GROUP BY potions.id
+            # ORDER BY quantity DESC
+
         table = connection.execute(
             sqlalchemy.text(
                 """
                 select 
-                    subquery3.potion_id,
-                    sum_purchases_on_hour,
-                    sum_purchases_on_day, 
-                    sum_purchases_general,
-                    rn,
+                    potion_id,
                     sku,
                     name,
+                    quantity,
                     price,
-                    potion_type,
-                    quantity
-
-                from
-                (select *,
-                    row_number() over (
-                        order by 
-                        sum_purchases_on_hour desc,
-                        sum_purchases_on_day desc,
-                        sum_purchases_general desc
-                    ) as rn
-                from
-                    (select 
-                    entries.potion_id, 
-                    coalesce(sum(case
-                        when ticks.day = :day and ticks.hour = :hour and quantity < 0 then quantity * -1
-                        else 0 end
-                        ), 0) as sum_purchases_on_hour,
-                    coalesce(sum(case 
-                        when ticks.day = :day and quantity < 0 then quantity * -1
-                        else 0 end
-                        ), 0) as sum_purchases_on_day,
-                    coalesce(sum(case
-                        when quantity < 0 then quantity * -1
-                        else 0 end
-                        ), 0) as sum_purchases_general
-                    from potion_ledger_entries as entries
-                    left join ticks
-                    on entries.tick_id = ticks.id
-                    group by entries.potion_id
-                    ) as subquery2
-                order by 
-                    case 
-                    when sum_purchases_on_day > 0 then 1
-                    else 1 + random() end,
-                    sum_purchases_on_hour desc,
-                    sum_purchases_on_day desc
-                ) as subquery3
-                join potion_inventory_view as potions 
-                on potions.potion_id = subquery3.potion_id
-                order by 
-                case
-                    when rn <= 5 then rn
-                    else 6 + random() end
+                    potion_type
+                from temp_catalog_view
                 """
-            ),
-            [{
-                "day": day,
-                "hour": hour
-            }]
+            )
         )
-            # GROUP BY potions.id
-            # ORDER BY quantity DESC
+
 
         counter = 0
-        darkFound = False
-        darkInCatalog = False
-        darkPotion = None
 
         for potion in table:
             numMade = 0
@@ -133,7 +146,7 @@ def get_catalog():
                 numMade = addedQuantities[potion.sku]
             
 
-            if potion.quantity + numMade > 0 and counter < 5:
+            if potion.quantity + numMade > 0 and ((isNight and counter < 5) or ((not isNight) and counter < 6)):
 
                 list.append(
                     {
@@ -148,7 +161,7 @@ def get_catalog():
 
                 counter += 1  
 
-            if potion.potion_type == [0, 0, 0, 100] and potion.quantity + numMade > 0:
+            elif potion.potion_type == [0, 0, 0, 100] and potion.quantity + numMade > 0:
                 list.append(
                     {
                         "sku": potion.sku,
@@ -158,8 +171,7 @@ def get_catalog():
                         "potion_type": potion.potion_type
                     }
                 )
-                counter += 1
-                darkFound = True      
+                counter += 1 
 
             if counter >= 6:
                 break
@@ -192,13 +204,14 @@ def get_bottle_plan():
         # Get the maxPotions I can make
         soft_limit_per_capacity = 10
         hard_limit_per_capacity = 6
+        num_potion_type = 12
 
         pot_capacity = connection.execute(sqlalchemy.text("SELECT pot_capacity FROM global_inventory")).scalar_one()
         maxToMake = (pot_capacity
                       - connection.execute(sqlalchemy.text("SELECT total_potions FROM total_inventory_view")).scalar_one())
         numPotMade = 0
         softLimit = pot_capacity * soft_limit_per_capacity // 50
-        hardLimit = pot_capacity * hard_limit_per_capacity // 50
+        hardLimit = pot_capacity * 50 // num_potion_type
 
         # Make ml inventory for all colors
         mlInventory = [0, 0, 0, 0]
