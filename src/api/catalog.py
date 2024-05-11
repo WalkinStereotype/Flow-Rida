@@ -75,7 +75,7 @@ def get_catalog():
                     ) as rn
                 from
                     (select 
-                    subquery.potion_id, 
+                    entries.potion_id, 
                     coalesce(sum(case
                         when ticks.day = :day and ticks.hour = :hour and quantity < 0 then quantity * -1
                         else 0 end
@@ -88,16 +88,10 @@ def get_catalog():
                         when quantity < 0 then quantity * -1
                         else 0 end
                         ), 0) as sum_purchases_general
-                    from 
-                        (select potion_id
-                        from potion_inventory_view
-                        where quantity > 0) as subquery
-
-                    join potion_ledger_entries as entries
-                    on subquery.potion_id = entries.potion_id
+                    from potion_ledger_entries as entries
                     left join ticks
                     on entries.tick_id = ticks.id
-                    group by subquery.potion_id
+                    group by entries.potion_id
                     ) as subquery2
                 order by 
                     case 
@@ -110,9 +104,9 @@ def get_catalog():
                 on potions.potion_id = subquery3.potion_id
                 order by 
                 case
-                    when rn <= 4 then rn
-                    else 5 + random() end
-                limit 6
+                    when rn <= 6 then rn
+                    else 6 + random() end
+                limit 12
                 """
             ),
             [{
@@ -123,19 +117,26 @@ def get_catalog():
             # GROUP BY potions.id
             # ORDER BY quantity DESC
 
+        counter = 0
+
         for potion in table:
             numMade = 0
             if potion.sku in addedQuantities.keys():
                 numMade = addedQuantities[potion.sku]
-            list.append(
-                {
-                    "sku": potion.sku,
-                    "name": potion.name,
-                    "quantity": potion.quantity + numMade,
-                    "price": potion.price,
-                    "potion_type": potion.potion_type
-                }
-            )
+            if potion.quantity + numMade > 0:
+                list.append(
+                    {
+                        "sku": potion.sku,
+                        "name": potion.name,
+                        "quantity": potion.quantity + numMade,
+                        "price": potion.price,
+                        "potion_type": potion.potion_type
+                    }
+                )
+
+                counter += 1
+                if counter >= 6:
+                    break
 
     # print(list)
 
