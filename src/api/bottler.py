@@ -123,6 +123,7 @@ def post_deliver_bottles(potions_delivered: list[PotionInventory], order_id: int
         
     return "OK"
 
+# DONT FORGET TO CHANGE IN CATALOG
 @router.post("/plan")
 def get_bottle_plan():
     """
@@ -134,7 +135,7 @@ def get_bottle_plan():
 
         # Get the maxPotions I can make
         soft_limit_per_capacity = 10
-        hard_limit_per_capacity = 9
+        hard_limit_per_capacity = 6
 
         pot_capacity = connection.execute(sqlalchemy.text("SELECT pot_capacity FROM global_inventory")).scalar_one()
         maxToMake = (pot_capacity
