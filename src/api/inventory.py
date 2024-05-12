@@ -240,8 +240,8 @@ def deliver_capacity_plan(capacity_purchase : CapacityPurchase, order_id: int):
                 sqlalchemy.text(
                     """
                     UPDATE ml_inventory 
-                    SET reg_threshold = 5000 + 1250 * (:ml_cap - 6),
-                    large_threshold = 15000 + 2500 * (:ml_cap - 6)
+                    SET reg_threshold = :ml_cap * 1250,
+                    large_threshold = :ml_cap * 2500
                     """
                 ), 
                 [{
