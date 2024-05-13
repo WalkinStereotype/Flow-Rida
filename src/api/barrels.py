@@ -231,24 +231,6 @@ def get_wholesale_purchase_plan(wholesale_catalog: list[Barrel]):
         if (sumSmallPrice > goldInHand):
             # Variable of how much gold spent so far
             goldNeeded = 0
-
-            # if mediumPresent:
-            #     for colorStats in colorStatsList:
-            #         color = colorStats[1]
-            #         if(color in organizedCatalog["medium"].keys() and 
-            #                 goldInHand >= goldNeeded + organizedCatalog["medium"][color].price and
-            #                 availableSpace >= organizedCatalog["medium"][color].ml_per_barrel):
-                    
-            #             plan.append(
-            #                 {
-            #                     "sku": organizedCatalog["medium"][color].sku,
-            #                     "quantity": 1
-            #                 }
-            #             )
-            #             goldNeeded += organizedCatalog["medium"][color].price 
-            #             availableSpace -= organizedCatalog["medium"][color].ml_per_barrel
-
-
             
             # Loop through barrel ids
             for colorStats in colorStatsList:
