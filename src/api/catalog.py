@@ -55,9 +55,9 @@ def get_catalog():
         # if (hour >= 0) and (hour <= 6):
         #     isNight = True
 
-        manual_catalog = connection.execute(
-            sqlalchemy.text("SELECT manual_catalog FROM global_inventory")
-        ).scalar_one()
+        manual_catalog, num_analyzed = connection.execute(
+            sqlalchemy.text("SELECT manual_catalog, num_analyzed FROM global_inventory")
+        ).fetchone()
 
         if(not manual_catalog):
         
@@ -110,13 +110,14 @@ def get_catalog():
                     on potions.potion_id = subquery3.potion_id
                     order by 
                     case
-                        when rn <= 5 then rn
+                        when rn <= :num_analyzed then rn
                         else 6 + random() end
                     """
                 ),
                 [{
                     "day": day,
-                    "hour": hour
+                    "hour": hour,
+                    "num_analyzed" : num_analyzed
                 }]
             )
                 # GROUP BY potions.id
