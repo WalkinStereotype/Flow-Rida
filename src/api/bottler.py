@@ -139,11 +139,11 @@ def get_bottle_plan():
         num_potion_type = 12
 
         pot_capacity = connection.execute(sqlalchemy.text("SELECT pot_capacity FROM global_inventory")).scalar_one()
-        maxToMake = (pot_capacity
+        maxToMake = (pot_capacity - 100
                       - connection.execute(sqlalchemy.text("SELECT total_potions FROM total_inventory_view")).scalar_one())
         numPotMade = 0
         softLimit = pot_capacity * soft_limit_per_capacity // 50
-        hardLimit = (pot_capacity * 50 - 100) // num_potion_type
+        hardLimit = (pot_capacity * 50) // num_potion_type
 
         # Make ml inventory for all colors
         mlInventory = [0, 0, 0, 0]
