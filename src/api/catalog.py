@@ -146,8 +146,8 @@ def get_catalog():
 
         for potion in table:
             numMade = 0
-            if potion.sku in addedQuantities.keys():
-                numMade = addedQuantities[potion.sku]
+            # if potion.sku in addedQuantities.keys():
+            #     numMade = addedQuantities[potion.sku]
             
 
             if potion.quantity + numMade > 0:  
