@@ -146,8 +146,8 @@ def get_catalog():
 
         for potion in table:
             numMade = 0
-            # if potion.sku in addedQuantities.keys():
-            #     numMade = addedQuantities[potion.sku]
+            if potion.sku in addedQuantities.keys():
+                numMade = addedQuantities[potion.sku]
             
 
             if potion.quantity + numMade > 0:  
@@ -207,7 +207,7 @@ def get_bottle_plan():
                       - connection.execute(sqlalchemy.text("SELECT total_potions FROM total_inventory_view")).scalar_one())
         numPotMade = 0
         softLimit = pot_capacity * soft_limit_per_capacity // 50
-        hardLimit = pot_capacity * 50 // num_potion_type
+        hardLimit = (pot_capacity * 50 - 100) // num_potion_type
 
         # Make ml inventory for all colors
         mlInventory = [0, 0, 0, 0]
